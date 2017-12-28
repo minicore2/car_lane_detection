@@ -7,7 +7,7 @@ endif
 
 BINDIR     = bin
 
-CFLAGS     = -c -Wall -std=c++11 -fPIC -w -O3 -msse3 -msse4.2 -funroll-loops -fexpensive-optimizations -ffast-math
+CFLAGS     = -c -g -Wall -std=c++11 -fPIC -w -O3 -msse3 -msse4.2 -funroll-loops -fexpensive-optimizations -ffast-math
 LDFLAGS    =
 
 SOURCES    = $(wildcard src/*.cpp)

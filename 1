@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
         }
 
 /*
-        unsigned long int di=0,dx=0,dy=0;
+        float d=0, di=0,dx=0,dy=0;
                   
         for(int y=0;y !=height; ++y)
         {
@@ -138,16 +138,41 @@ int main(int argc, char *argv[])
                if(255==data[y*step+x])
                {
                 
-                   dx=abs(b*i-j+a);
+                   dx=abs(b*y-x+a);
                    dy=sqrt(b*b+1);
-                   di+=dx/dy ;
+                   d+=dx/dy ;
                   
                }
             }
  
         }
-*/
+
+        di=d/num;
+
+        printf("--- di=%f  \n",di);
         
+        float si=0,si2=0;
+ 
+        for(int y=0;y !=height; ++y)
+        {
+           for(int x=0;x !=width; ++x)
+           {
+               if(255==data[y*step+x])
+               {
+                   dx=abs(b*y-x+a);
+                   dy=sqrt(b*b+1);
+                   d=dx/dy ;
+                   si+=d-di; 
+  
+               }
+           }
+
+        }
+
+        si2=si/(num-1);
+
+        printf("--- si=%f  si2=%f  \n",si,si2);
+*/ 
 
 
 //创建窗口、显示图像、销毁图像、释放图像  

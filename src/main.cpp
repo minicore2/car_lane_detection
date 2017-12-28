@@ -63,20 +63,35 @@ int main(int argc, char *argv[])
 
 //        printf("value= %d\n",data[523*step+175]);
 
+        bool init=true;
         unsigned long int xl=0,yl=0,num=0; 
+        float b=0 ,a=0;    
+        double d=0, di=0,dx=0,dy=0;
+        double new_d=0 ;
         
-             
+        for(int itera=0;itera<2;itera++)        
+        {
+
+
         for(int y=0;y !=height; ++y)
         {
            for(int x=0;x !=width; ++x)  
            {
                if(255==data[y*step+x])    
                {
-                   num++;
-                   xl+=x;
-                   yl+=y;
-                   printf(" --- line-point x=%d y=%d xl=%d yl=%d num=%d \n",x,y,xl,yl,num);  
+
+                   dx=abs(b*y-x+a);
+                   dy=sqrt(b*b+1);
+                   d=dx/dy ;
+                   if((d<=new_d)&&(init==true))
+                   {
+
+                       num++;
+                       xl+=x;
+                       yl+=y;
+//                       printf(" --- line-point x=%d y=%d xl=%d yl=%d num=%d \n",x,y,xl,yl,num);  
                    
+                   }
 
                }
            }
@@ -99,15 +114,19 @@ int main(int argc, char *argv[])
            {
                if(255==data[y*step+x])
                {
-                    ax+=(x-xi)*x ;
-                    bx+=(y-yi)*x ;
-                    printf(" --- line-b x=%d y=%d ax=%f bx=%f  \n",x,y,ax,bx);
-           
+                   dx=abs(b*y-x+a);
+                   dy=sqrt(b*b+1);
+                   d=dx/dy ;
+                   if((d<=new_d)&&(init==true))
+                   {
+                        ax+=(x-xi)*x ;
+                        bx+=(y-yi)*x ;
+//                        printf(" --- line-b x=%d y=%d ax=%f bx=%f  \n",x,y,ax,bx);
+                   }
                }
            }
         }
 
-        float b=0 ,a=0;
 
         b=bx/ax;                 
         
@@ -116,8 +135,71 @@ int main(int argc, char *argv[])
         printf("--- c-point xi=%f,yi=%f \n",xi,yi);
         printf(" ---- linx y= %f+%fx \n", a,b);
 
+                  
+        for(int y=0;y !=height; ++y)
+        {
+           for(int x=0;x !=width; ++x)
+           {
+               if(255==data[y*step+x])
+               {
+                   dx=abs(b*y-x+a);
+                   dy=sqrt(b*b+1);
+                   d=dx/dy ;
+                   if((d<=new_d)&&(init==true))
+                   {
+                       dx=abs(b*y-x+a);
+                       dy=sqrt(b*b+1);
+                       d+=dx/dy ;
+ //                      printf("--- x=%d,y=%d  distance=%g \n",x,y,d);
+                   }
+               }
+            }
+ 
+        }
 
-        for(int y=0;y !=height; y++)
+        di=d/num;
+
+        printf("--- di=%f  \n",di);
+        
+        double si=0,si2=0;
+ 
+        for(int y=0;y !=height; ++y)
+        {
+           for(int x=0;x !=width; ++x)
+           {
+               if(255==data[y*step+x])
+               {   
+                   dx=abs(b*y-x+a);
+                   dy=sqrt(b*b+1);
+                   d=dx/dy ;
+                   if((d<=new_d)&&(init==true))
+                   {
+                   dx=abs(b*y-x+a);
+                   dy=sqrt(b*b+1);
+                   d=dx/dy ;
+                   si+=(d-di)*(d-di); 
+                   }
+               }
+           }
+
+        }
+
+       si2=si/(num-1);
+
+       printf("--- si=%g  si2=%g  \n",si,si2);
+
+
+
+       new_d=sqrt(si2);
+
+       printf("--- new_d %g \n",new_d);
+
+       init=false;        
+
+       
+       }
+  
+       for(int y=0;y !=height; y++)
         {
            for(int x=0;x !=width; x++)
            {
@@ -128,26 +210,8 @@ int main(int argc, char *argv[])
             }
         }
 
-/*
-        unsigned long int di=0,dx=0,dy=0;
-                  
-        for(int y=0;y !=height; ++y)
-        {
-           for(int x=0;x !=width; ++x)
-           {
-               if(255==data[y*step+x])
-               {
-                
-                   dx=abs(b*i-j+a);
-                   dy=sqrt(b*b+1);
-                   di+=dx/dy ;
-                  
-               }
-            }
- 
-        }
-*/
-        
+
+       
 
 
 //创建窗口、显示图像、销毁图像、释放图像  
