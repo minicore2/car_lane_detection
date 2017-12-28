@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
         IplImage* img0;  
         IplImage* img1;  
   
-        img = cvLoadImage("test-2.jpg");//默认初始图像放在工程文件下  
+        img = cvLoadImage("test-4.jpg");//默认初始图像放在工程文件下  
         //IplImage* img1 = img;  
   
         if (NULL == img)  
@@ -66,10 +66,10 @@ int main(int argc, char *argv[])
         bool init=true;
         unsigned long int xl=0,yl=0,num=0; 
         float b=0 ,a=0;    
-        double d=0, di=0,dx=0,dy=0;
-        double new_d=0 ;
+        float d=0, di=0,dx=0,dy=0;
+        float new_d=0 ;
         
-        for(int itera=0;itera<2;itera++)        
+        for(int itera=0;itera<5;itera++)        
         {
 
 
@@ -79,11 +79,13 @@ int main(int argc, char *argv[])
            {
                if(255==data[y*step+x])    
                {
-
-                   dx=abs(b*y-x+a);
-                   dy=sqrt(b*b+1);
-                   d=dx/dy ;
-                   if((d<=new_d)&&(init==true))
+                   if(init==false)
+                   {
+                       dx=abs(b*y-x+a);
+                       dy=sqrt(b*b+1);
+                       d=dx/dy ;
+                   }
+                   if((init==true)||(d<=new_d))
                    {
 
                        num++;
@@ -114,10 +116,14 @@ int main(int argc, char *argv[])
            {
                if(255==data[y*step+x])
                {
-                   dx=abs(b*y-x+a);
-                   dy=sqrt(b*b+1);
-                   d=dx/dy ;
-                   if((d<=new_d)&&(init==true))
+                   if(init==false)
+                   {              
+                       dx=abs(b*y-x+a);
+                       dy=sqrt(b*b+1);
+                       d=dx/dy ;
+                   }
+
+                   if((init==true)||(d<=new_d))
                    {
                         ax+=(x-xi)*x ;
                         bx+=(y-yi)*x ;
@@ -142,10 +148,14 @@ int main(int argc, char *argv[])
            {
                if(255==data[y*step+x])
                {
-                   dx=abs(b*y-x+a);
-                   dy=sqrt(b*b+1);
-                   d=dx/dy ;
-                   if((d<=new_d)&&(init==true))
+                   if(init==false)
+                   {
+                       dx=abs(b*y-x+a);
+                       dy=sqrt(b*b+1);
+                       d=dx/dy ;
+                   }
+
+                   if((init==true)||(d<=new_d))
                    {
                        dx=abs(b*y-x+a);
                        dy=sqrt(b*b+1);
@@ -161,7 +171,7 @@ int main(int argc, char *argv[])
 
         printf("--- di=%f  \n",di);
         
-        double si=0,si2=0;
+        float si=0,si2=0;
  
         for(int y=0;y !=height; ++y)
         {
@@ -169,15 +179,19 @@ int main(int argc, char *argv[])
            {
                if(255==data[y*step+x])
                {   
-                   dx=abs(b*y-x+a);
-                   dy=sqrt(b*b+1);
-                   d=dx/dy ;
-                   if((d<=new_d)&&(init==true))
+                   if(init==false)
                    {
-                   dx=abs(b*y-x+a);
-                   dy=sqrt(b*b+1);
-                   d=dx/dy ;
-                   si+=(d-di)*(d-di); 
+                       dx=abs(b*y-x+a);
+                       dy=sqrt(b*b+1);
+                       d=dx/dy ;
+                   }
+
+                   if((init==true)||(d<=new_d))
+                   {
+                       dx=abs(b*y-x+a);
+                       dy=sqrt(b*b+1);
+                       d=dx/dy ;
+                       si+=(d-di)*(d-di); 
                    }
                }
            }
@@ -205,7 +219,7 @@ int main(int argc, char *argv[])
            {
                if(y==(int(a+b*x)))
                {
-                   data[y*step+x]=255;
+                   data[y*step+x]=0;
                }
             }
         }
