@@ -1,18 +1,50 @@
 #include "cv.h"  
 #include "highgui.h"  
-//#include <cvaux.h>  
 #include <iostream>
-
+#include <opencv2/opencv.hpp>  
+using namespace cv;
 using namespace std;
 
   
 int main(int argc, char *argv[])  
 {  
-        IplImage* img;  
+	IplImage* img;  
         IplImage* img0;  
         IplImage* img1;  
-  
-        img = cvLoadImage("test-4.jpg");//默认初始图像放在工程文件下  
+        IplImage* img2;  
+
+
+   	cv::Mat image = cv::imread("test.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+    	imshow("testSrc", image);
+
+    	if (image.empty())
+    	{
+        	std::cout << "read image failure" << std::endl;
+        	return -1;
+    	}
+
+    	// 全局二值化  
+    	int th = 100;
+    	cv::Mat global;
+    	cv::threshold(image, global, 70, 255, CV_THRESH_BINARY_INV);
+
+
+    	// 局部二值化  
+
+    	int blockSize = 25;
+    	int constValue = 10;
+    	cv::Mat local;
+    	cv::adaptiveThreshold(image, local, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY_INV, blockSize, constValue);
+
+
+    	cv::imwrite("global.jpg", global);
+    	cv::imwrite("local.jpg", local);
+
+    	cv::imshow("globalThreshold", global);
+    	cv::imshow("localThreshold", local);
+
+
+        img = cvLoadImage("local.jpg");//默认初始图像放在工程文件下  
         //IplImage* img1 = img;  
   
         if (NULL == img)  
@@ -27,8 +59,10 @@ int main(int argc, char *argv[])
 //图像数据复制  
         img1 = cvCreateImage(cvGetSize(img),IPL_DEPTH_8U,1);//申请一段内存  
         cvCopy(img0, img1, NULL);//数据复制，若直接赋值相当指针指向同一地址会对原本img0操作  
-  
-  
+        img2 = cvCreateImage(cvGetSize(img),IPL_DEPTH_8U,1);//申请一段内存
+         
+      
+
 //二值化操作  
         int height = img1->height;  
         int width = img1->width;  
@@ -61,6 +95,9 @@ int main(int argc, char *argv[])
          }  
         } 
 
+        cvCopy(img1, img2, NULL);
+
+
 //        printf("value= %d\n",data[523*step+175]);
 
         bool init=true;
@@ -71,7 +108,6 @@ int main(int argc, char *argv[])
         
         for(int itera=0;itera<5;itera++)        
         {
-
 
         for(int y=0;y !=height; ++y)
         {
@@ -210,31 +246,42 @@ int main(int argc, char *argv[])
 
        init=false;        
 
-       
-       }
-  
+      
        for(int y=0;y !=height; y++)
         {
            for(int x=0;x !=width; x++)
            {
-               if(y==(int(a+b*x)))
+               if(int(a+b*x)==y)
                {
-                   data[y*step+x]=0;
+                   if(y>10&&y<height)
+                   {
+                       data[y*step+x+2]=255;
+                       data[y*step+x+1]=255;
+                       data[y*step+x-1]=255;
+                       data[y*step+x-2]=255;
+                   }
+                   data[y*step+x]=255;
+                   
                }
             }
         }
 
+        cvNamedWindow( "test", 0 );
+        cvShowImage("test", img1);
 
-       
+        cvCopy(img2, img1, NULL);
+
+
+        }       
 
 
 //创建窗口、显示图像、销毁图像、释放图像  
         cvNamedWindow( "test1", 0 );  
         cvShowImage("test1", img0);  
   
-        cvNamedWindow( "test", 0 );  
-        cvShowImage("test", img1);  
-  
+//        cvNamedWindow( "test", 0 );  
+//        cvShowImage("test", img1);  
+ 
         cvWaitKey(0);  
   
         cvDestroyWindow( "test1" );  
