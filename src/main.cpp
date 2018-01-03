@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
         IplImage* img2;  
 
 
-   	cv::Mat image = cv::imread("test.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+   	cv::Mat image = cv::imread("test-4.jpg", CV_LOAD_IMAGE_GRAYSCALE);
     	imshow("testSrc", image);
 
     	if (image.empty())
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 
     	cv::imshow("localThreshold", local);
 
-        img = cvLoadImage("local.jpg");//默认初始图像放在工程文件下  
+        img = cvLoadImage("test-4.jpg");//默认初始图像放在工程文件下  
         
 	if (NULL == img)  
             return 0;  
@@ -59,9 +59,29 @@ int main(int argc, char *argv[])
 
         uchar *data = (uchar*)img1->imageData;  
   
-        cvCopy(img1, img2, NULL);
 
-//        printf("value= %d\n",data[523*step+175]);
+        for(int i=0;i != height; ++ i)  
+        {  
+         for(int j=0;j != width; ++ j)  
+         {  
+             for(int k=0;k != channels; ++ k)  
+             {  
+                 if(data[i*step+j*channels+k]<128)  
+                 {
+                    data[i*step+j*channels+k]=0;//255-data[i*step+j*channels+k];  
+//                   if(on==true)
+//                   {
+//                     printf("---value= %d  num=%d i=%d,j=%d\n",data[i*step+j*channels+k],i*step+j*channels+k,i,j);
+//                      on=false;
+//                   }
+                 }
+                 else  
+                  data[i*step+j*channels+k]=255;//255-data[i*step+j*channels+k];  
+             }  
+         }  
+        } 
+
+        cvCopy(img1, img2, NULL);
 
         bool init=true;
         unsigned long int xl=0,yl=0,num=0; 
@@ -69,13 +89,21 @@ int main(int argc, char *argv[])
         float d=0, di=0,dx=0,dy=0;
         float new_d=0 ;
         
-        for(int itera=0;itera<5;itera++)        
+
+        int height_start=  0, height_end= img1->height ; 
+        int width_start=   0 , width_end=  img1->width;
+
+
+        for(int itera=0;itera<4;itera++)        
         {
 
-        for(int y=0;y !=height; ++y)
+                
+        for(int y=height_start;y !=height_end; ++y)
         {
-           for(int x=0;x !=width; ++x)  
+           for(int x=width_start;x !=width_end; ++x)  
            {
+               
+//               printf("--- test x=%d,y=%d,data=%d \n",x,y,data[y*step+x]);
                if(255==data[y*step+x])    
                {
                    if(init==false)
@@ -83,6 +111,7 @@ int main(int argc, char *argv[])
                        dx=abs(b*y-x+a);
                        dy=sqrt(b*b+1);
                        d=dx/dy ;
+                       printf("--test-- d=%g \n",d);
                    }
                    if((init==true)||(d<=new_d))
                    {
@@ -90,7 +119,7 @@ int main(int argc, char *argv[])
                        num++;
                        xl+=x;
                        yl+=y;
-//                       printf(" --- line-point x=%d y=%d xl=%d yl=%d num=%d \n",x,y,xl,yl,num);  
+                       printf(" --- line-point x=%d y=%d xl=%d yl=%d num=%d \n",x,y,xl,yl,num);  
                    
                    }
 
@@ -98,6 +127,8 @@ int main(int argc, char *argv[])
            }
         }
 
+        if(0==num)
+        break; 
 
         float xi=0 , yi=0 ;  
 
@@ -108,10 +139,10 @@ int main(int argc, char *argv[])
 
 
         float ax=0,bx=0;
-         
-        for(int y=0;y !=height; ++y)
+       
+        for(int y=height_start;y !=height_end; ++y)
         {
-           for(int x=0;x !=width; ++x)
+           for(int x=width_start;x !=width_end; ++x)
            {
                if(255==data[y*step+x])
                {
@@ -126,7 +157,7 @@ int main(int argc, char *argv[])
                    {
                         ax+=(x-xi)*x ;
                         bx+=(y-yi)*x ;
-//                        printf(" --- line-b x=%d y=%d ax=%f bx=%f  \n",x,y,ax,bx);
+                        printf(" --- line-b x=%d y=%d ax=%f bx=%f  \n",x,y,ax,bx);
                    }
                }
            }
@@ -141,9 +172,9 @@ int main(int argc, char *argv[])
         printf(" ---- linx y= %f+%fx \n", a,b);
 
                   
-        for(int y=0;y !=height; ++y)
+        for(int y=height_start;y !=height_end; ++y)
         {
-           for(int x=0;x !=width; ++x)
+           for(int x=width_start;x !=width_end; ++x)
            {
                if(255==data[y*step+x])
                {
@@ -159,7 +190,7 @@ int main(int argc, char *argv[])
                        dx=abs(b*y-x+a);
                        dy=sqrt(b*b+1);
                        d+=dx/dy ;
- //                      printf("--- x=%d,y=%d  distance=%g \n",x,y,d);
+                       printf("--- x=%d,y=%d  distance=%g \n",x,y,d);
                    }
                }
             }
@@ -172,9 +203,9 @@ int main(int argc, char *argv[])
         
         float si=0,si2=0;
  
-        for(int y=0;y !=height; ++y)
+        for(int y=height_start;y !=height_end; ++y)
         {
-           for(int x=0;x !=width; ++x)
+           for(int x=width_start;x !=width_end; ++x)
            {
                if(255==data[y*step+x])
                {   
@@ -190,6 +221,7 @@ int main(int argc, char *argv[])
                        dx=abs(b*y-x+a);
                        dy=sqrt(b*b+1);
                        d=dx/dy ;
+                       printf("--test-- d=%g \n",d);
                        si+=(d-di)*(d-di); 
                    }
                }
@@ -210,20 +242,20 @@ int main(int argc, char *argv[])
        init=false;        
 
       
-       for(int y=0;y !=height; y++)
+       for(int y=height_start;y !=height_end; y++)
         {
-           for(int x=0;x !=width; x++)
+           for(int x=width_start;x !=width_end; x++)
            {
                if(int(a+b*x)==y)
                {
-                   if(y>10&&y<height)
-                   {
-                       data[y*step+x+2]=255;
-                       data[y*step+x+1]=255;
-                       data[y*step+x-1]=255;
-                       data[y*step+x-2]=255;
-                   }
-                   data[y*step+x]=255;
+//                   if(y>(height_start+3)&&y<height_end)
+//                   {
+//                       data[y*step+x+2]=255;
+//                       data[y*step+x+1]=255;
+//                       data[y*step+x-1]=255;
+//                       data[y*step+x-2]=255;
+//                   }
+                   data[y*step+x]=0;
                    
                }
             }
@@ -232,7 +264,7 @@ int main(int argc, char *argv[])
         cvNamedWindow( "test", 0 );
         cvShowImage("test", img1);
 
-        cvCopy(img2, img1, NULL);
+        cvCopy(img2, img1, NULL); 
         }       
 
 //创建窗口、显示图像、销毁图像、释放图像  
