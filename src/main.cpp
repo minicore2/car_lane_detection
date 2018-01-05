@@ -12,9 +12,11 @@ int main(int argc, char *argv[])
         IplImage* img0;  
         IplImage* img1;  
         IplImage* img2;  
+        std::string pic_name="test";
 
 
-   	cv::Mat image = cv::imread("test-4.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+
+   	cv::Mat image = cv::imread("test-6.jpg", CV_LOAD_IMAGE_GRAYSCALE);
     	imshow("testSrc", image);
 
     	if (image.empty())
@@ -34,7 +36,7 @@ int main(int argc, char *argv[])
 
     	cv::imshow("localThreshold", local);
 
-        img = cvLoadImage("test-4.jpg");//默认初始图像放在工程文件下  
+        img = cvLoadImage("local.jpg");//默认初始图像放在工程文件下  
         
 	if (NULL == img)  
             return 0;  
@@ -81,23 +83,33 @@ int main(int argc, char *argv[])
          }  
         } 
 
+// removing noise
+
+        
+
+
+
+
+
         cvCopy(img1, img2, NULL);
 
         bool init=true;
         unsigned long int xl=0,yl=0,num=0; 
-        float b=0 ,a=0;    
-        float d=0, di=0,dx=0,dy=0;
-        float new_d=0 ;
+        double b=0 ,a=0;    
+        double d=0, dl=0, di=0,dx=0,dy=0;
+        double new_d=0 ;
         
 
         int height_start=  0, height_end= img1->height ; 
         int width_start=   0 , width_end=  img1->width;
 
 
-        for(int itera=0;itera<4;itera++)        
+        for(int itera=0;itera<8;itera++)        
         {
 
-                
+        num=0;
+        xl=0;
+        yl=0;                 
         for(int y=height_start;y !=height_end; ++y)
         {
            for(int x=width_start;x !=width_end; ++x)  
@@ -111,7 +123,7 @@ int main(int argc, char *argv[])
                        dx=abs(b*y-x+a);
                        dy=sqrt(b*b+1);
                        d=dx/dy ;
-                       printf("--test-- d=%g \n",d);
+//                       printf("--test-- d=%g \n",d);
                    }
                    if((init==true)||(d<=new_d))
                    {
@@ -119,7 +131,7 @@ int main(int argc, char *argv[])
                        num++;
                        xl+=x;
                        yl+=y;
-                       printf(" --- line-point x=%d y=%d xl=%d yl=%d num=%d \n",x,y,xl,yl,num);  
+//                       printf(" --- line-point x=%d y=%d xl=%d yl=%d num=%d \n",x,y,xl,yl,num);  
                    
                    }
 
@@ -130,7 +142,7 @@ int main(int argc, char *argv[])
         if(0==num)
         break; 
 
-        float xi=0 , yi=0 ;  
+        double xi=0 , yi=0 ;  
 
         xi=xl/num ;
         yi=yl/num ; 
@@ -138,7 +150,7 @@ int main(int argc, char *argv[])
         printf("--- c-point xi=%f,yi=%f \n",xi,yi); 
 
 
-        float ax=0,bx=0;
+        double ax=0,bx=0;
        
         for(int y=height_start;y !=height_end; ++y)
         {
@@ -157,7 +169,8 @@ int main(int argc, char *argv[])
                    {
                         ax+=(x-xi)*x ;
                         bx+=(y-yi)*x ;
-                        printf(" --- line-b x=%d y=%d ax=%f bx=%f  \n",x,y,ax,bx);
+//                        printf(" --- line-b x=%d y=%d aa=%f bb=%f  \n",x,y,(x-xi)*x,(y-yi)*x);
+//                        printf(" --- line-b x=%d y=%d ax=%f bx=%f  \n",x,y,ax,bx);
                    }
                }
            }
@@ -168,7 +181,6 @@ int main(int argc, char *argv[])
         
         a=yi-b*xi;
 
-        printf("--- c-point xi=%f,yi=%f \n",xi,yi);
         printf(" ---- linx y= %f+%fx \n", a,b);
 
                   
@@ -189,8 +201,8 @@ int main(int argc, char *argv[])
                    {
                        dx=abs(b*y-x+a);
                        dy=sqrt(b*b+1);
-                       d+=dx/dy ;
-                       printf("--- x=%d,y=%d  distance=%g \n",x,y,d);
+                       dl+=dx/dy ;
+  //                     printf("--- x=%d,y=%d  distance=%g \n",x,y,dx/dy);
                    }
                }
             }
@@ -221,7 +233,7 @@ int main(int argc, char *argv[])
                        dx=abs(b*y-x+a);
                        dy=sqrt(b*b+1);
                        d=dx/dy ;
-                       printf("--test-- d=%g \n",d);
+//                       printf("--test-- d=%g \n",d);
                        si+=(d-di)*(d-di); 
                    }
                }
@@ -261,19 +273,20 @@ int main(int argc, char *argv[])
             }
         }
 
-        cvNamedWindow( "test", 0 );
-        cvShowImage("test", img1);
+        pic_name+="1" ;
+        cvNamedWindow(pic_name.c_str(), 0 );
+        cvShowImage(pic_name.c_str(), img1);
 
         cvCopy(img2, img1, NULL); 
         }       
 
 //创建窗口、显示图像、销毁图像、释放图像  
-        cvNamedWindow( "test1", 0 );  
-        cvShowImage("test1", img0);  
+//        cvNamedWindow( "test1", 0 );  
+//        cvShowImage("test1", img0);  
  
         cvWaitKey(0);  
   
-        cvDestroyWindow( "test1" );  
+//        cvDestroyWindow( "test1" );  
         cvDestroyWindow( "test" );  
   
         cvReleaseImage( &img0 );  
