@@ -1,5 +1,6 @@
 #include "cv.h"  
 #include "highgui.h"  
+#include "lane.h"
 #include <iostream>
 #include <opencv2/opencv.hpp>  
 using namespace cv;
@@ -8,7 +9,7 @@ using namespace std;
 
 //#define test_4_debug 0 
 //#define test_simple_point1 0
-
+#define make_biger_line 0
 
   
 int main(int argc, char *argv[])  
@@ -21,9 +22,16 @@ int main(int argc, char *argv[])
         std::string pic_name="test";
         std::string pic_new="new";
 
+        std::vector<lane *> lane_;  
+ //       new lane;  
 
-   	cv::Mat image = cv::imread("test-6.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+
+   	cv::Mat image = cv::imread("test-14.jpg", CV_LOAD_IMAGE_GRAYSCALE);
     	imshow("testSrc", image);
+
+        cv::Mat image_origin = cv::imread("test-14.jpg");
+//        imshow("origin", image_origin);
+
 
     	if (image.empty())
     	{
@@ -50,6 +58,8 @@ int main(int argc, char *argv[])
         
 	if (NULL == img)  
             return 0;  
+
+        //img0 = cvCreateImage(cvGetSize(img),IPL_DEPTH_8U,1);//申请一段内存 
  
         img0 = cvCreateImage(cvGetSize(img),IPL_DEPTH_8U,1);//申请一段内存  
   
@@ -182,8 +192,35 @@ data[3*step+80]=255;
         cvCopy(img1, img2, NULL);
         cvCopy(img1, img3, NULL);
 
-        int height_start=  0, height_end= img1->height ; 
-        int width_start=   0 , width_end=  img1->width;
+        
+    //    for(int i=0;i<5;i++)
+//        {
+        
+    //    for(int j=0;j<5;j++)        
+//        {
+      
+        int i=3,j=1;
+  
+        printf("---- part x=%d,y=%d \n",i,j);
+       
+        lane *lan=new lane(); 
+
+
+        int height_start=  (img1->height/5)*i, height_end=  (img1->height/5)*(i+1); 
+        int width_start=   (img1->width/5)*j, width_end=     (img1->width/5)*(j+1);
+
+
+        printf("--test height_start=%d,height_end=%d \n", height_start,height_end);
+        printf("--test width_start=%d, width_end=%d \n",  width_start,width_end);
+
+
+        lan->x=i;
+        lan->y=j;
+        lan->x_line_start=height_start;
+        lan->x_line_end=height_end;
+        lan->y_line_start=width_start;
+        lan->y_line_end=width_end;
+     
 
         double xl=0,yl=0 ;
 
@@ -195,25 +232,30 @@ data[3*step+80]=255;
 
         float new_d=0;
 
-        for(int itera=0;itera<5;itera++)        
+        float bench =0;
+
+        printf("--test here \n");
+        for(int itera=0;itera<8;itera++)        
         {
 
         num=0;
         xl=0;
         yl=0;                 
+
         for(int x=height_start;x !=height_end; ++x)
         {
+      
            for(int y=width_start;y !=width_end; ++y)  
            {
                
-//              printf("--- test x=%d,y=%d,data=%d \n",x,y,data2[x*step+y]);
+//               printf("--- test x=%d,y=%d,data=%d \n",x,y,data[x*step+y]);
                if(255==data[x*step+y])    
                {
 
                        num++;
                        xl+=x;
                        yl+=y;
-                       printf(" --- line-point x=%d y=%d xl=%g yl=%g num=%d \n",x,y,xl,yl,num);  
+//                       printf(" --- line-point x=%d y=%d xl=%g yl=%g num=%d \n",x,y,xl,yl,num);  
                }
            }
         }
@@ -239,8 +281,8 @@ data[3*step+80]=255;
                {
                         ax+=(x-xi)*x ;
                         bx+=(y-yi)*x ;
-                        printf(" --- line-b x=%d y=%d aa=%f bb=%f  \n",x,y,(x-xi)*x,(y-yi)*x);
-                        printf(" --- line-b x=%d y=%d ax=%f bx=%f  \n",x,y,ax,bx);
+//                        printf(" --- line-b x=%d y=%d aa=%f bb=%f  \n",x,y,(x-xi)*x,(y-yi)*x);
+//                        printf(" --- line-b x=%d y=%d ax=%f bx=%f  \n",x,y,ax,bx);
                }
            }
         }
@@ -281,7 +323,7 @@ data[3*step+80]=255;
        unsigned int test_x=20,test_y=23; 
        float test_distance=0;
 
-
+/*
  //      dx=abs(b*test_x-test_y+a);
        dx=b*test_x-test_y+a; 
        dy=sqrt(b*b+1);
@@ -291,7 +333,7 @@ data[3*step+80]=255;
        printf("---- test distance\n");
        printf("---- line y= %f+%fx \n", a,b);
        printf("---- point x=%d,y=%d test_d=%g \n",test_x,test_y,test_distance);
-     
+ */    
 
       float si=0,si2=0;
       unsigned s_num=0;
@@ -317,9 +359,21 @@ data[3*step+80]=255;
 
        printf("--- si=%g  si2=%g  \n",si,si2);
 
-       new_d=sqrt(si2);
+       if(0==itera)
+       {
+           bench=sqrt(si2);
+           new_d=sqrt(si2);
+       }
+       else
+       {
+           new_d=si2; 
+       }
 
-//       new_d=si2;
+       
+       lan->a=a;
+       lan->b=b; 
+       lane_.push_back(lan);
+    
 
        printf("--- new_d %g \n",new_d); 
 
@@ -334,13 +388,16 @@ data[3*step+80]=255;
            {
                if(int(a+b*x)==y)
                {
-//                   if(y>(height_start+3)&&y<height_end)
-//                   {
-//                       data[y*step+x+2]=255;
-//                       data[y*step+x+1]=255;
-//                       data[y*step+x-1]=255;
-//                       data[y*step+x-2]=255;
-//                   }
+                  #ifdef make_biger_line
+                  if(y>(height_start+3)&&y<height_end)
+                   {
+                       data[y*step+x+2]=255;
+                       data[y*step+x+1]=255;
+                       data[y*step+x-1]=255;
+                       data[y*step+x-2]=255;
+                   }
+                   #endif
+
                    #ifdef  test_simple_point1
                    data2[x*step+y]=255;
                    #else 
@@ -352,6 +409,25 @@ data[3*step+80]=255;
         }
 
         cvCopy(img3, img1, NULL);
+
+
+       for(int x=0;x !=height; x++)
+        {
+            for(int y=0;y !=width; y++)
+            {
+                if(!((x>height_start)&&(x<height_end)))
+                {
+                    data[x*step+y]=0;
+                }
+
+                if(!((y>width_start)&&(y<width_end)))
+                {
+                    data[x*step+y]=0;
+                }
+            }
+        }
+
+
 
 
      //   double dx=0,dy=0;
@@ -374,8 +450,23 @@ data[3*step+80]=255;
         cvNamedWindow(pic_new.c_str(), 0 );
         cvShowImage(pic_new.c_str(), img1);
 
+
+        if(new_d<bench)
+        break; 
 //        cvCopy(img1, img2, NULL); 
-        }       
+        }
+     
+  //      }
+
+ //       }       
+
+   //   y=a+bx
+ 
+//        line(image_origin,Point(width_start,(width_start-a)/b),Point(width_end,(width_end-a)/b),Scalar(0,0,255),5,CV_AA);
+
+ //       printf(" test line start (%d,%d) end (%d,%d) \n",width_start,(width_start-a)/b,width_end,(width_end-a)/b);
+        imshow("origin", image_origin);
+
 
 //创建窗口、显示图像、销毁图像、释放图像  
 //        cvNamedWindow( "test1", 0 );  
