@@ -6,10 +6,11 @@
 using namespace cv;
 using namespace std;
 
-
+#define para 0.8 
 //#define test_4_debug 0 
 //#define test_simple_point1 0
-#define make_biger_line 0
+//#define make_biger_line 0
+
 
   
 int main(int argc, char *argv[])  
@@ -26,10 +27,10 @@ int main(int argc, char *argv[])
  //       new lane;  
 
 
-   	cv::Mat image = cv::imread("test-14.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+   	cv::Mat image = cv::imread("test-6.jpg", CV_LOAD_IMAGE_GRAYSCALE);
     	imshow("testSrc", image);
 
-        cv::Mat image_origin = cv::imread("test-14.jpg");
+//        cv::Mat image_origin = cv::imread("test-14.jpg");
 //        imshow("origin", image_origin);
 
 
@@ -198,17 +199,20 @@ data[3*step+80]=255;
         
     //    for(int j=0;j<5;j++)        
 //        {
-      
+
         int i=3,j=1;
   
         printf("---- part x=%d,y=%d \n",i,j);
        
         lane *lan=new lane(); 
 
-
+/*
         int height_start=  (img1->height/5)*i, height_end=  (img1->height/5)*(i+1); 
         int width_start=   (img1->width/5)*j, width_end=     (img1->width/5)*(j+1);
+*/
 
+        int height_start=  0, height_end=  img1->height ; 
+        int width_start=   0, width_end=   img1->width  ; 
 
         printf("--test height_start=%d,height_end=%d \n", height_start,height_end);
         printf("--test width_start=%d, width_end=%d \n",  width_start,width_end);
@@ -359,17 +363,97 @@ data[3*step+80]=255;
 
        printf("--- si=%g  si2=%g  \n",si,si2);
 
+        
+       float total_num=0,data_num=0;      
+
+       float space_ori=0;
+ 
+       float space_lat=0;
+
+       bool  change_map=true;
+
+       while(true==change_map)
+       {
        if(0==itera)
        {
-           bench=sqrt(si2);
+//           bench=sqrt(si2);
            new_d=sqrt(si2);
        }
        else
        {
-           new_d=si2; 
+           new_d=para*si2; 
        }
 
-       
+       printf("--test--- new_d %g \n",new_d);
+
+       data_num=0;
+
+       total_num=0; 
+
+       for(int x=height_start;x !=height_end; x++)
+       {
+            for(int y=width_start;y !=width_end; y++)
+            {
+                dx=abs(b*x-y+a);
+                dy=sqrt(b*b+1);
+                d=dx/dy ;
+                if(d<=new_d)
+                {
+
+//                   printf("--test-- great---\n");
+                   if(255==data[x*step+y])
+                   {
+                      data_num++; 
+                   }
+                   total_num++;
+                   
+                }           
+            }
+       }
+
+      space_ori=data_num/total_num; 
+
+      printf("--test-- space_ori=%g data_num=%d total_num=%d \n",space_ori,data_num,total_num);
+//      new_d=para*si2; 
+
+      data_num=0;
+      total_num=0; 
+
+      for(int x=height_start;x !=height_end; x++)
+       {
+            for(int y=width_start;y !=width_end; y++)
+            {
+                dx=abs(b*x-y+a);
+                dy=sqrt(b*b+1);
+                d=dx/dy ;
+                if(d<=new_d)
+                {  
+                   if(255==data[x*step+y])
+                   {
+                      data_num++; 
+                   }
+                   total_num++;
+                   
+                }
+            }
+       }
+
+       space_lat=data_num/total_num;
+
+       printf("--test-- space_ori=%g space_lat=%g ",space_ori,space_lat);
+
+       if(space_lat<space_ori)
+       {
+           new_d=(para+0.05)*si2;
+       }
+       else
+       {
+           change_map=false; 
+       }
+
+       }
+
+
        lan->a=a;
        lan->b=b; 
        lane_.push_back(lan);
@@ -451,8 +535,8 @@ data[3*step+80]=255;
         cvShowImage(pic_new.c_str(), img1);
 
 
-        if(new_d<bench)
-        break; 
+//        if(new_d<bench)
+//        break; 
 //        cvCopy(img1, img2, NULL); 
         }
      
@@ -465,7 +549,7 @@ data[3*step+80]=255;
 //        line(image_origin,Point(width_start,(width_start-a)/b),Point(width_end,(width_end-a)/b),Scalar(0,0,255),5,CV_AA);
 
  //       printf(" test line start (%d,%d) end (%d,%d) \n",width_start,(width_start-a)/b,width_end,(width_end-a)/b);
-        imshow("origin", image_origin);
+//        imshow("origin", image_origin);
 
 
 //创建窗口、显示图像、销毁图像、释放图像  
