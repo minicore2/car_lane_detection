@@ -6,12 +6,12 @@
 using namespace cv;
 using namespace std;
 
-#define para 0.8 
+#define para 0.95 
 //#define test_4_debug 0 
 //#define test_simple_point1 0
 //#define make_biger_line 0
-
-
+#define white_line 
+#define parallel_line_while
   
 int main(int argc, char *argv[])  
 {  
@@ -234,7 +234,9 @@ data[3*step+80]=255;
 
 	float  dl=0,d=0;
 
-        float new_d=0;
+        float new_d=0,last_d;
+
+        float si=0,si2=0,last_si2=0;;
 
         float bench =0;
 
@@ -339,7 +341,6 @@ data[3*step+80]=255;
        printf("---- point x=%d,y=%d test_d=%g \n",test_x,test_y,test_distance);
  */    
 
-      float si=0,si2=0;
       unsigned s_num=0;
 
       for(int x=height_start;x !=height_end; ++x)
@@ -348,7 +349,7 @@ data[3*step+80]=255;
            {
                    if(255==data[x*step+y])
                    {
-                       dx=b*x-y+a;
+                       dx=abs(b*x-y+a);
                        dy=sqrt(b*b+1);
                        d=dx/dy ;
 //                       printf("--test-- d=%g \n",d);
@@ -359,11 +360,25 @@ data[3*step+80]=255;
 
        }
 
+       if(0!=itera)
+       {
+           last_si2=si2; 
+       } 
+
        si2=si/(num-1);
+
+       if((last_si2/si2)>=2)
+       break; 
+   
 
        printf("--- si=%g  si2=%g  \n",si,si2);
 
-        
+       last_d=new_d ;
+
+       new_d=sqrt(si2)/0.5;      
+  
+//       new_d=si2; 
+
        float total_num=0,data_num=0;      
 
        float space_ori=0;
@@ -372,17 +387,8 @@ data[3*step+80]=255;
 
        bool  change_map=true;
 
-       while(true==change_map)
+       while((true==change_map)&&(0!=itera))
        {
-       if(0==itera)
-       {
-//           bench=sqrt(si2);
-           new_d=sqrt(si2);
-       }
-       else
-       {
-           new_d=para*si2; 
-       }
 
        printf("--test--- new_d %g \n",new_d);
 
@@ -397,7 +403,7 @@ data[3*step+80]=255;
                 dx=abs(b*x-y+a);
                 dy=sqrt(b*b+1);
                 d=dx/dy ;
-                if(d<=new_d)
+                if(d<=last_d)
                 {
 
 //                   printf("--test-- great---\n");
@@ -414,7 +420,6 @@ data[3*step+80]=255;
       space_ori=data_num/total_num; 
 
       printf("--test-- space_ori=%g data_num=%d total_num=%d \n",space_ori,data_num,total_num);
-//      new_d=para*si2; 
 
       data_num=0;
       total_num=0; 
@@ -442,9 +447,11 @@ data[3*step+80]=255;
 
        printf("--test-- space_ori=%g space_lat=%g ",space_ori,space_lat);
 
-       if(space_lat<space_ori)
+       if(space_lat<=space_ori)
        {
-           new_d=(para+0.05)*si2;
+           change_map=false; 
+           new_d=new_d*1.3;
+//           new_d=new_d*(para+0.10);
        }
        else
        {
@@ -453,6 +460,8 @@ data[3*step+80]=255;
 
        }
 
+     
+      
 
        lan->a=a;
        lan->b=b; 
@@ -475,26 +484,47 @@ data[3*step+80]=255;
                   #ifdef make_biger_line
                   if(y>(height_start+3)&&y<height_end)
                    {
-                       data[y*step+x+2]=255;
-                       data[y*step+x+1]=255;
-                       data[y*step+x-1]=255;
-                       data[y*step+x-2]=255;
+                       data2[y*step+x+2]=255;
+                       data2[y*step+x+1]=255;
+                       data2[y*step+x-1]=255;
+                       data2[y*step+x-2]=255;
                    }
                    #endif
 
                    #ifdef  test_simple_point1
                    data2[x*step+y]=255;
                    #else 
+                
+                   #ifdef  white_line
                    data2[x*step+y]=255;
-                   #endif 
-                   
+                   #else
+                   data2[x*step+y]=0;
+                   #endif                    
+             
+                   #endif                   
                }
+
+               dx=abs(b*x-y+a);
+               dy=sqrt(b*b+1);
+               d=dx/dy ;
+               if((int)d==(int)new_d)
+               {
+                   if(0==data2[x*step+y])
+                   {
+                       data2[x*step+y]=255;
+                   }
+                   else
+                   {  
+                       data2[x*step+y]=0;
+                   }
+               }
+
             }
         }
 
         cvCopy(img3, img1, NULL);
 
-
+/*
        for(int x=0;x !=height; x++)
         {
             for(int y=0;y !=width; y++)
@@ -510,7 +540,7 @@ data[3*step+80]=255;
                 }
             }
         }
-
+*/
 
 
 
