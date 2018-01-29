@@ -12,6 +12,7 @@ using namespace std;
 //#define make_biger_line 0
 #define white_line 
 #define parallel_line_while
+#define whole_picture
   
 int main(int argc, char *argv[])  
 {  
@@ -30,7 +31,10 @@ int main(int argc, char *argv[])
    	cv::Mat image = cv::imread("test-6.jpg", CV_LOAD_IMAGE_GRAYSCALE);
     	imshow("testSrc", image);
 
-//        cv::Mat image_origin = cv::imread("test-14.jpg");
+        cv::Mat image_origin = cv::imread("test-6.jpg");
+
+//        image_origin.at<Vec3b>(4, 4) = Vec3b(255, 255, 255);
+//        dst.at<Vec3b>(50, 50) = 255, 255, 255;
 //        imshow("origin", image_origin);
 
 
@@ -194,25 +198,24 @@ data[3*step+80]=255;
         cvCopy(img1, img3, NULL);
 
         
-    //    for(int i=0;i<5;i++)
-//        {
+        for(int i=0;i<2;i++)
+        {
         
-    //    for(int j=0;j<5;j++)        
-//        {
+        for(int j=0;j<1;j++)        
+        {
 
-        int i=3,j=1;
-  
+//        int i=4,j=0;  
         printf("---- part x=%d,y=%d \n",i,j);
        
         lane *lan=new lane(); 
 
-/*
-        int height_start=  (img1->height/5)*i, height_end=  (img1->height/5)*(i+1); 
-        int width_start=   (img1->width/5)*j, width_end=     (img1->width/5)*(j+1);
-*/
 
-        int height_start=  0, height_end=  img1->height ; 
-        int width_start=   0, width_end=   img1->width  ; 
+        int height_start=  (img1->height/2)*i, height_end=  (img1->height/2)*(i+1); 
+        int width_start=   (img1->width/1)*j, width_end=     (img1->width/1)*(j+1);
+
+
+//        int height_start=  0, height_end=  img1->height ; 
+//        int width_start=   0, width_end=   img1->width  ; 
 
         printf("--test height_start=%d,height_end=%d \n", height_start,height_end);
         printf("--test width_start=%d, width_end=%d \n",  width_start,width_end);
@@ -450,7 +453,7 @@ data[3*step+80]=255;
        if(space_lat<=space_ori)
        {
            change_map=false; 
-           new_d=new_d*1.3;
+           new_d=new_d*1.1;
 //           new_d=new_d*(para+0.10);
        }
        else
@@ -524,7 +527,7 @@ data[3*step+80]=255;
 
         cvCopy(img3, img1, NULL);
 
-/*
+#ifndef whole_picture 
        for(int x=0;x !=height; x++)
         {
             for(int y=0;y !=width; y++)
@@ -540,8 +543,20 @@ data[3*step+80]=255;
                 }
             }
         }
-*/
+#endif 
 
+       for(int x=height_start;x !=height_end; x++)
+        {
+           for(int y=width_start;y !=width_end; y++)
+           {
+               if(int(a+b*x)==y)
+               {
+
+                   image_origin.at<Vec3b>(x, y) = Vec3b(255, 0, 0);
+
+               }
+            }
+        }
 
 
      //   double dx=0,dy=0;
@@ -557,6 +572,7 @@ data[3*step+80]=255;
             }
         }
 
+#ifndef whole_picture
         pic_name+="1" ;
         pic_new+="1";
         cvNamedWindow(pic_name.c_str(), 0 );
@@ -564,22 +580,19 @@ data[3*step+80]=255;
         cvNamedWindow(pic_new.c_str(), 0 );
         cvShowImage(pic_new.c_str(), img1);
 
-
+#endif 
 //        if(new_d<bench)
 //        break; 
 //        cvCopy(img1, img2, NULL); 
         }
      
-  //      }
+       }
 
- //       }       
+       }       
 
    //   y=a+bx
- 
-//        line(image_origin,Point(width_start,(width_start-a)/b),Point(width_end,(width_end-a)/b),Scalar(0,0,255),5,CV_AA);
 
- //       printf(" test line start (%d,%d) end (%d,%d) \n",width_start,(width_start-a)/b,width_end,(width_end-a)/b);
-//        imshow("origin", image_origin);
+        imshow("origin", image_origin);
 
 
 //创建窗口、显示图像、销毁图像、释放图像  
