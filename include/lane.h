@@ -14,7 +14,7 @@ class lane
     float density; 
     float a;
     float b;
-    float FA,FB,FC,FD,FE;
+    float FA,FB,FC,FD,FE,FF;
     float FS;
 //    float TF; 
 

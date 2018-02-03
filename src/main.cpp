@@ -23,8 +23,10 @@ using namespace std;
 int middle_width=0; 
 
 extern void best_line(lane *lan) ;
+extern void updateFS(lane *lan);
+extern void updatepic(cv::Mat *image,lane *lan);  
 
-  
+
 int main(int argc, char *argv[])  
 {  
 	IplImage* img;  
@@ -600,6 +602,7 @@ data[3*step+80]=255;
         } 
 
 
+/*
        if(7==itera)
        {
 
@@ -611,16 +614,17 @@ data[3*step+80]=255;
                {
                    image_origin.at<Vec3b>(x, y) = Vec3b(0, 0, 255);
                }
-            
+      
 
+ 
                if(int(a+b*x)==y)
                {
        //lan->a=a;
        //lan->b=b;
        //lane_.push_bacK(lan);                              
                  
-       //            if((space_ori>0.70)||(space_ori<0.1))
-       //                break;  
+                   if((space_ori>0.70)||(space_ori<0.1))
+                       break;  
                    if(y<(img1->width/2))
                    {
                        if(b>0)
@@ -647,11 +651,12 @@ data[3*step+80]=255;
                    image_origin.at<Vec3b>(x, y) = Vec3b(0, 0, 255);
                    #endif 
                }
+
             }
         }
        
         }
-
+*/
      //   double dx=0,dy=0;
         for(int x=height_start;x !=height_end; x++)
         {
@@ -686,6 +691,8 @@ data[3*step+80]=255;
 
 
        std::vector<lane *>::iterator lis; 
+       std::vector<lane *>::iterator lit;
+
 
        for(lis=lane_.begin();lis!=lane_.end();++lis)
        {
@@ -693,6 +700,62 @@ data[3*step+80]=255;
            best_line(*lis);
 
        }
+       
+       for(lis=lane_.begin();lis!=lane_.end();++lis)
+       {
+           for(lit=lane_.begin();lit!=lane_.end();++lit)
+           {
+       //        printf("----shinq-- x=%d,y=%d FS=%g  \n",(*lis)->x,(*lis)->y,(*lis)->FS);
+
+               if((*lis)->FS>=2)
+               {
+
+         //          printf("----FS>2 \n");
+ 
+                   int lane_middle_width1=((*lis)->y_line_end+(*lis)->y_line_start)/2;
+                   int lane_middle_width2=((*lis)->y_line_end+(*lis)->y_line_start)/2; 
+ 
+                   if(((lane_middle_width1<middle_width)&&(lane_middle_width2<middle_width))||\
+                   ((lane_middle_width1>middle_width)&&(lane_middle_width2>middle_width)))
+                   {                        
+
+
+                   if(((*lis)->x!=(*lit)->x)&&((*lis)->y!=(*lit)->y))
+                   {
+                       
+                       printf("----abs((*lis)->b-(*lit)->b)=%g  \n",abs((*lis)->b-(*lit)->b));
+                       if((abs((*lis)->b-(*lit)->b)<=0.1)&&abs((*lis)->a-(*lit)->a)<=50) 
+                       {
+                          (*lis)->FE++;                        
+            
+                       }          
+                  //     if(abs((*lis)->a-(*lit)->a)<=30)
+                  //     {
+                  //        (*lis)->FF++;
+                  //     }
+                   } 
+
+
+                   }
+               }
+           }
+       }
+
+       
+      
+
+      for(lis=lane_.begin();lis!=lane_.end();++lis)
+       {
+           updateFS(*lis);
+           printf("----shinq-- x=%d,y=%d FS=%g  \n",(*lis)->x,(*lis)->y,(*lis)->FS);
+
+           if((*lis)->FS>=4)
+           {
+               updatepic(&image_origin,*lis);            
+
+           }
+       }
+
  
         imshow("origin", image_origin);
 
@@ -717,14 +780,22 @@ data[3*step+80]=255;
 void best_line(lane *lan)
 { 
 
-    int lane_middle_width=(lan->x_line_end-lan->x_line_start)/2; 
+    int lane_middle_width=0; 
+
+    lane_middle_width=(lan->y_line_end+lan->y_line_start)/2; 
+
+
+//    printf(" lan->y_line_end=%d lan->y_line_start=%d \n",lan->y_line_end,lan->y_line_start);
+//    printf(" lane_middle_width=%d middle_width=%d \n",lane_middle_width,middle_width);
+
+
 
     if(lane_middle_width<middle_width)
     {
         if(lan->b<0)
             lan->FA=1;
 
-        if(lan->b<-0.0875)
+        if(lan->b<-0.176)
         { 
             lan->FB=1; 
         }
@@ -736,10 +807,13 @@ void best_line(lane *lan)
     }
     else
     {
+
+        printf(" x=%d y=%d right \n",lan->x,lan->y);
+
         if(lan->b>0)
             lan->FA=1;
  
-        if(lan->b>0.0875)
+        if(lan->b>0.176)
         {   
             lan->FB=1; 
         }
@@ -753,21 +827,68 @@ void best_line(lane *lan)
     if((lan->density<0.70)||(lan->density>0.1))
         lan->FD=1;
 
+    updateFS(lan);
 
-
-    lan->FS=(lan->FA+lan->FB+lan->FC+lan->FD+lan->FE); 
-
+    return ; 
 }
 
 
+void updateFS(lane *lan)
+{
+    lan->FS=(lan->FA+lan->FB+lan->FC+lan->FD+lan->FE+lan->FF);
+
+}
+ 
+
+void updatepic(cv::Mat *image,lane *lan)
+{
+         
+        for(int x=lan->x_line_start;x <=lan->x_line_end; x++)
+        {
+           for(int y=lan->y_line_start;y <=lan->y_line_end; y++)
+           {
+       //        if((width_end==y)||(height_end==x))
+       //        {
+       //            image_origin.at<Vec3b>(x, y) = Vec3b(0, 0, 255);
+       //        }
+            
+               if(int(lan->a+lan->b*x)==y)
+               {
+       //lan->a=a;
+       //lan->b=b;
+       //lane_.push_bacK(lan);                              
+                 
+       //            if((space_ori>0.70)||(space_ori<0.1))
+      //                 break;  
+      //             if(y<(img1->width/2))
+      //             {
+      //                 if(b>0)
+     //                  break;
+     //              }
+     //              else
+     //              {
+     //                  if(b<0)
+     //                  break ; 
+
+      //             }    
+
+                  #ifdef make_biger_line
+                //  if(y>(height_start+3)&&y<height_end)
+                   {
+                       image->at<Vec3b>(x, y-2) = Vec3b(0, 0, 255);
+                       image->at<Vec3b>(x, y-1) = Vec3b(0, 0, 255);
+                       image->at<Vec3b>(x, y) = Vec3b(0, 0, 255);
+                       image->at<Vec3b>(x, y+1) = Vec3b(0, 0, 255);
+                       image->at<Vec3b>(x, y+2) = Vec3b(0, 0, 255);
+                    
+                   }
+                   #else
+                   image->at<Vec3b>(x, y) = Vec3b(0, 0, 255);
+                   #endif 
+               }
+            }
+        }
 
 
 
-
-
-
-
-
-
-
-  
+}
