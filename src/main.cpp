@@ -6,13 +6,24 @@
 using namespace cv;
 using namespace std;
 
+#define HEIGHT_NUM 10
+#define WIDTH_NUM  10
+
+#define OTSU 
+
+
 #define para 0.95 
 //#define test_4_debug 0 
 //#define test_simple_point1 0
-//#define make_biger_line 0
+#define make_biger_line 
 #define white_line 
 #define parallel_line_while
 #define whole_picture
+
+int middle_width=0; 
+
+extern void best_line(lane *lan) ;
+
   
 int main(int argc, char *argv[])  
 {  
@@ -28,11 +39,26 @@ int main(int argc, char *argv[])
  //       new lane;  
 
 
-   	cv::Mat image = cv::imread("test-6.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+   	cv::Mat image = cv::imread("test.jpg", CV_LOAD_IMAGE_GRAYSCALE);
     	imshow("testSrc", image);
 
-        cv::Mat image_origin = cv::imread("test-6.jpg");
+        cv::Mat image_origin = cv::imread("test.jpg");
 
+#ifdef  OTSU 
+
+        if (image.empty())
+        {
+                std::cout << "read image failure" << std::endl;
+                return -1;
+        }
+
+        cv::Mat otsu;
+        cv::threshold(image, otsu, 0, 255, CV_THRESH_OTSU);
+        cv::imshow("otsu", otsu);
+
+
+        cv::imwrite("local.jpg", otsu);
+#else 
 //        image_origin.at<Vec3b>(4, 4) = Vec3b(255, 255, 255);
 //        dst.at<Vec3b>(50, 50) = 255, 255, 255;
 //        imshow("origin", image_origin);
@@ -54,7 +80,7 @@ int main(int argc, char *argv[])
     	cv::imwrite("local.jpg", local);
 
     	cv::imshow("localThreshold", local);
-
+#endif 
 
 //        #ifdef test_4_debug 
         img = cvLoadImage("local.jpg");//默认初始图像放在工程文件下  
@@ -78,6 +104,7 @@ int main(int argc, char *argv[])
 //二值化操作  
         int height = img1->height;  
         int width = img1->width;  
+        middle_width= img1->width/2; 
 //        int step  = img1->width;
         int step = img1->widthStep;  
         int channels = img1->nChannels; 
@@ -198,10 +225,10 @@ data[3*step+80]=255;
         cvCopy(img1, img3, NULL);
 
         
-        for(int i=0;i<2;i++)
+        for(int i=0;i<HEIGHT_NUM;i++)
         {
         
-        for(int j=0;j<1;j++)        
+        for(int j=0;j<WIDTH_NUM;j++)        
         {
 
 //        int i=4,j=0;  
@@ -210,8 +237,8 @@ data[3*step+80]=255;
         lane *lan=new lane(); 
 
 
-        int height_start=  (img1->height/2)*i, height_end=  (img1->height/2)*(i+1); 
-        int width_start=   (img1->width/1)*j, width_end=     (img1->width/1)*(j+1);
+        int height_start=  (img1->height/HEIGHT_NUM)*i, height_end=  (img1->height/HEIGHT_NUM)*(i+1); 
+        int width_start=   (img1->width/WIDTH_NUM)*j, width_end=     (img1->width/WIDTH_NUM)*(j+1);
 
 
 //        int height_start=  0, height_end=  img1->height ; 
@@ -228,6 +255,8 @@ data[3*step+80]=255;
         lan->y_line_start=width_start;
         lan->y_line_end=width_end;
      
+
+        float total_num=0,data_num=0;
 
         double xl=0,yl=0 ;
 
@@ -251,6 +280,22 @@ data[3*step+80]=255;
         xl=0;
         yl=0;                 
 
+       for(int x=height_start;x !=height_end; x++)
+       {
+            for(int y=width_start;y !=width_end; y++)
+            {
+                   if(255==data[x*step+y])
+                   {
+                      data_num++;
+                   }
+                   total_num++;
+
+            }
+       }
+
+       lan->density=data_num/total_num; 
+
+
         for(int x=height_start;x !=height_end; ++x)
         {
       
@@ -270,8 +315,11 @@ data[3*step+80]=255;
         }
 
         if(0==num)
-        break; 
-
+        {
+            lane_.push_back(lan);
+            break; 
+        }
+ 
         double xi=0 , yi=0 ;  
 
         xi=xl/num ;
@@ -382,7 +430,7 @@ data[3*step+80]=255;
   
 //       new_d=si2; 
 
-       float total_num=0,data_num=0;      
+//       float total_num=0,data_num=0;      
 
        float space_ori=0;
  
@@ -468,7 +516,7 @@ data[3*step+80]=255;
 
        lan->a=a;
        lan->b=b; 
-       lane_.push_back(lan);
+//       lane_.push_back(lan);
     
 
        printf("--- new_d %g \n",new_d); 
@@ -545,19 +593,64 @@ data[3*step+80]=255;
         }
 #endif 
 
-       for(int x=height_start;x !=height_end; x++)
+        if(7==itera)
         {
-           for(int y=width_start;y !=width_end; y++)
+             lane_.push_back(lan);
+//             delete lan;  
+        } 
+
+
+       if(7==itera)
+       {
+
+       for(int x=height_start;x <=height_end; x++)
+        {
+           for(int y=width_start;y <=width_end; y++)
            {
+               if((width_end==y)||(height_end==x))
+               {
+                   image_origin.at<Vec3b>(x, y) = Vec3b(0, 0, 255);
+               }
+            
+
                if(int(a+b*x)==y)
                {
+       //lan->a=a;
+       //lan->b=b;
+       //lane_.push_bacK(lan);                              
+                 
+       //            if((space_ori>0.70)||(space_ori<0.1))
+       //                break;  
+                   if(y<(img1->width/2))
+                   {
+                       if(b>0)
+                       break;
+                   }
+                   else
+                   {
+                       if(b<0)
+                       break ; 
 
-                   image_origin.at<Vec3b>(x, y) = Vec3b(255, 0, 0);
+                   }    
 
+                  #ifdef make_biger_line
+                //  if(y>(height_start+3)&&y<height_end)
+                   {
+                       image_origin.at<Vec3b>(x, y-2) = Vec3b(0, 0, 255);
+                       image_origin.at<Vec3b>(x, y-1) = Vec3b(0, 0, 255);
+                       image_origin.at<Vec3b>(x, y) = Vec3b(0, 0, 255);
+                       image_origin.at<Vec3b>(x, y+1) = Vec3b(0, 0, 255);
+                       image_origin.at<Vec3b>(x, y+2) = Vec3b(0, 0, 255);
+                    
+                   }
+                   #else
+                   image_origin.at<Vec3b>(x, y) = Vec3b(0, 0, 255);
+                   #endif 
                }
             }
         }
-
+       
+        }
 
      //   double dx=0,dy=0;
         for(int x=height_start;x !=height_end; x++)
@@ -580,10 +673,8 @@ data[3*step+80]=255;
         cvNamedWindow(pic_new.c_str(), 0 );
         cvShowImage(pic_new.c_str(), img1);
 
-#endif 
-//        if(new_d<bench)
-//        break; 
-//        cvCopy(img1, img2, NULL); 
+#endif
+ 
         }
      
        }
@@ -592,6 +683,17 @@ data[3*step+80]=255;
 
    //   y=a+bx
 
+
+
+       std::vector<lane *>::iterator lis; 
+
+       for(lis=lane_.begin();lis!=lane_.end();++lis)
+       {
+  
+           best_line(*lis);
+
+       }
+ 
         imshow("origin", image_origin);
 
 
@@ -609,4 +711,63 @@ data[3*step+80]=255;
   
         return 0;  
 
-}  
+}
+
+
+void best_line(lane *lan)
+{ 
+
+    int lane_middle_width=(lan->x_line_end-lan->x_line_start)/2; 
+
+    if(lane_middle_width<middle_width)
+    {
+        if(lan->b<0)
+            lan->FA=1;
+
+        if(lan->b<-0.0875)
+        { 
+            lan->FB=1; 
+        }
+        else
+        {
+            lan->FS=0;
+            return;
+        }
+    }
+    else
+    {
+        if(lan->b>0)
+            lan->FA=1;
+ 
+        if(lan->b>0.0875)
+        {   
+            lan->FB=1; 
+        }
+        else
+        {
+            lan->FS=0;
+            return;
+        }
+    }
+
+    if((lan->density<0.70)||(lan->density>0.1))
+        lan->FD=1;
+
+
+
+    lan->FS=(lan->FA+lan->FB+lan->FC+lan->FD+lan->FE); 
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+  

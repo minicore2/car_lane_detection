@@ -11,8 +11,12 @@ class lane
     unsigned int x_line_end;
     unsigned int y_line_start;
     unsigned int y_line_end;   
+    float density; 
     float a;
     float b;
+    float FA,FB,FC,FD,FE;
+    float FS;
+//    float TF; 
 
 };  
 
