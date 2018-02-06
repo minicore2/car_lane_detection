@@ -14,8 +14,9 @@ class lane
     float density; 
     float a;
     float b;
-    float FA,FB,FC,FD,FE,FF;
-    float FS;
+    float new_d;
+    unsigned int FA,FB,FC,FD,FE,FF;
+    unsigned int  FS;
 //    float TF; 
 
 };  

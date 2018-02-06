@@ -8,7 +8,6 @@ using namespace std;
 
 #define HEIGHT_NUM 10
 #define WIDTH_NUM  10
-
 #define OTSU 
 
 
@@ -19,6 +18,8 @@ using namespace std;
 #define white_line 
 #define parallel_line_while
 #define whole_picture
+#define debug_lane 
+
 
 int middle_width=0; 
 
@@ -517,7 +518,8 @@ data[3*step+80]=255;
       
 
        lan->a=a;
-       lan->b=b; 
+       lan->b=b;
+       lan->new_d=new_d; 
 //       lane_.push_back(lan);
     
 
@@ -602,7 +604,7 @@ data[3*step+80]=255;
         } 
 
 
-/*
+
        if(7==itera)
        {
 
@@ -610,13 +612,15 @@ data[3*step+80]=255;
         {
            for(int y=width_start;y <=width_end; y++)
            {
+                #ifdef debug_lane
                if((width_end==y)||(height_end==x))
                {
                    image_origin.at<Vec3b>(x, y) = Vec3b(0, 0, 255);
                }
+               #endif 
       
 
- 
+/* 
                if(int(a+b*x)==y)
                {
        //lan->a=a;
@@ -652,11 +656,11 @@ data[3*step+80]=255;
                    #endif 
                }
 
-            }
+  */          }
         }
        
         }
-*/
+
      //   double dx=0,dy=0;
         for(int x=height_start;x !=height_end; x++)
         {
@@ -705,12 +709,12 @@ data[3*step+80]=255;
        {
            for(lit=lane_.begin();lit!=lane_.end();++lit)
            {
-       //        printf("----shinq-- x=%d,y=%d FS=%g  \n",(*lis)->x,(*lis)->y,(*lis)->FS);
+//              printf("----shinq-- x=%d,y=%d FS=%d  \n",(*lis)->x,(*lis)->y,(*lis)->FS);
 
-               if((*lis)->FS>=2)
+               if((*lis)->FS>=4)
                {
 
-         //          printf("----FS>2 \n");
+//                  printf("----FS>2 \n");
  
                    int lane_middle_width1=((*lis)->y_line_end+(*lis)->y_line_start)/2;
                    int lane_middle_width2=((*lis)->y_line_end+(*lis)->y_line_start)/2; 
@@ -747,9 +751,9 @@ data[3*step+80]=255;
       for(lis=lane_.begin();lis!=lane_.end();++lis)
        {
            updateFS(*lis);
-           printf("----shinq-- x=%d,y=%d FS=%g  \n",(*lis)->x,(*lis)->y,(*lis)->FS);
+           printf("----shinq-- x=%d,y=%d FS=%d  \n",(*lis)->x,(*lis)->y,(*lis)->FS);
 
-           if((*lis)->FS>=4)
+           if((*lis)->FS>=5)
            {
                updatepic(&image_origin,*lis);            
 
@@ -829,6 +833,17 @@ void best_line(lane *lan)
 
     updateFS(lan);
 
+
+    if(lan->FS>=3)
+    {
+        if(lan->new_d<(lan->x_line_end-lan->x_line_start)/4)
+        {
+            lan->FF=1;      
+        }
+    }
+
+    updateFS(lan);
+
     return ; 
 }
 
@@ -842,6 +857,7 @@ void updateFS(lane *lan)
 
 void updatepic(cv::Mat *image,lane *lan)
 {
+        float dx=0,dy=0,d=0; 
          
         for(int x=lan->x_line_start;x <=lan->x_line_end; x++)
         {
@@ -886,6 +902,16 @@ void updatepic(cv::Mat *image,lane *lan)
                    image->at<Vec3b>(x, y) = Vec3b(0, 0, 255);
                    #endif 
                }
+
+                #ifdef debug_lane
+                dx=abs(lan->b*x-y+lan->a);
+                dy=sqrt(lan->b*lan->b+1);
+                d=dx/dy ;
+                if(int(d)==int(lan->new_d))
+                {
+                    image->at<Vec3b>(x, y) = Vec3b(0, 0, 255);
+                }
+                #endif
             }
         }
 
