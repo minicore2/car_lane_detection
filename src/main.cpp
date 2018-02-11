@@ -19,7 +19,7 @@ using namespace std;
 #define parallel_line_while
 #define whole_picture
 #define debug_lane 
-
+#define debug_video 
 
 int middle_width=0; 
 
@@ -42,10 +42,49 @@ int main(int argc, char *argv[])
  //       new lane;  
 
 
+
+
+#ifdef debug_video 
+
+        VideoCapture cap("video_1.mp4");// open the default camera  
+        if(!cap.isOpened()) // check if we succeeded  
+            return -1;
+          
+        namedWindow("src");
+        cv::Mat temp;
+        cv::Mat image; 
+        cv::Mat image_origin;
+//        cap >> image; // get a new frame from camera 
+
+#else
    	cv::Mat image = cv::imread("test.jpg", CV_LOAD_IMAGE_GRAYSCALE);
     	imshow("testSrc", image);
 
         cv::Mat image_origin = cv::imread("test.jpg");
+
+#endif 
+
+#ifdef debug_video 
+//        for(int k=0;k<1 ;k++)
+      for(;;)
+      {
+             cap >> temp;
+             if(temp.empty())
+             {           
+                 std::cout << "read image failure" << std::endl;
+                 return -1;
+             }
+
+             cap >> image_origin;
+             cv::cvtColor(temp,image,CV_BGR2GRAY);
+             
+//             imshow("src", image);
+//             if(waitKey(30) >= 0)
+//                break;
+//        } 
+//        {           
+#endif 
+ 
 
 #ifdef  OTSU 
 
@@ -55,6 +94,7 @@ int main(int argc, char *argv[])
                 return -1;
         }
 
+        printf("---debug--video \n");
         cv::Mat otsu;
         cv::threshold(image, otsu, 0, 255, CV_THRESH_OTSU);
         cv::imshow("otsu", otsu);
@@ -113,7 +153,7 @@ int main(int argc, char *argv[])
         int channels = img1->nChannels; 
         bool on=true;
   
-        cout<<"size : height="<<img1->height<<"  width="<<img1->width<<" widthStep="<<img1->widthStep<<" nchannels="<<img1->nChannels<<std::endl; 
+//        cout<<"size : height="<<img1->height<<"  width="<<img1->width<<" widthStep="<<img1->widthStep<<" nchannels="<<img1->nChannels<<std::endl; 
 
         uchar *data = (uchar*)img1->imageData;  
         uchar *data2 = (uchar*)img2->imageData; 
@@ -224,6 +264,8 @@ data[3*step+80]=255;
 
 */
 
+
+
         cvCopy(img1, img2, NULL);
         cvCopy(img1, img3, NULL);
 
@@ -235,7 +277,7 @@ data[3*step+80]=255;
         {
 
 //        int i=4,j=0;  
-        printf("---- part x=%d,y=%d \n",i,j);
+//        printf("---- part x=%d,y=%d \n",i,j);
        
         lane *lan=new lane(); 
 
@@ -247,8 +289,8 @@ data[3*step+80]=255;
 //        int height_start=  0, height_end=  img1->height ; 
 //        int width_start=   0, width_end=   img1->width  ; 
 
-        printf("--test height_start=%d,height_end=%d \n", height_start,height_end);
-        printf("--test width_start=%d, width_end=%d \n",  width_start,width_end);
+//        printf("--test height_start=%d,height_end=%d \n", height_start,height_end);
+//        printf("--test width_start=%d, width_end=%d \n",  width_start,width_end);
 
 
         lan->x=i;
@@ -328,7 +370,7 @@ data[3*step+80]=255;
         xi=xl/num ;
         yi=yl/num ; 
 
-        printf("--- c-point xi=%g,yi=%g num=%d \n",xi,yi,num); 
+ //       printf("--- c-point xi=%g,yi=%g num=%d \n",xi,yi,num); 
 
 
         double ax=0,bx=0;
@@ -352,7 +394,7 @@ data[3*step+80]=255;
         
        a=yi-b*xi;
 
-       printf(" ---- linx y= %f+%fx \n", a,b); 
+  //     printf(" ---- linx y= %f+%fx \n", a,b); 
 
        dl=0; 
 
@@ -377,7 +419,7 @@ data[3*step+80]=255;
          
        di=dl/dl_num;
 
-       printf("--- di=%g dl=%g dl_num=%d \n",di,dl,dl_num);
+ //      printf("--- di=%g dl=%g dl_num=%d \n",di,dl,dl_num);
 
 
        unsigned int test_x=20,test_y=23; 
@@ -425,7 +467,7 @@ data[3*step+80]=255;
        break; 
    
 
-       printf("--- si=%g  si2=%g  \n",si,si2);
+//       printf("--- si=%g  si2=%g  \n",si,si2);
 
        last_d=new_d ;
 
@@ -444,7 +486,7 @@ data[3*step+80]=255;
        while((true==change_map)&&(0!=itera))
        {
 
-       printf("--test--- new_d %g \n",new_d);
+//       printf("--test--- new_d %g \n",new_d);
 
        data_num=0;
 
@@ -473,7 +515,7 @@ data[3*step+80]=255;
 
       space_ori=data_num/total_num; 
 
-      printf("--test-- space_ori=%g data_num=%d total_num=%d \n",space_ori,data_num,total_num);
+  //    printf("--test-- space_ori=%g data_num=%d total_num=%d \n",space_ori,data_num,total_num);
 
       data_num=0;
       total_num=0; 
@@ -499,7 +541,7 @@ data[3*step+80]=255;
 
        space_lat=data_num/total_num;
 
-       printf("--test-- space_ori=%g space_lat=%g ",space_ori,space_lat);
+    //   printf("--test-- space_ori=%g space_lat=%g ",space_ori,space_lat);
 
        if(space_lat<=space_ori)
        {
@@ -523,7 +565,7 @@ data[3*step+80]=255;
 //       lane_.push_back(lan);
     
 
-       printf("--- new_d %g \n",new_d); 
+   //    printf("--- new_d %g \n",new_d); 
 
 
        cvCopy(img3, img2, NULL);       
@@ -727,7 +769,7 @@ data[3*step+80]=255;
                    if(((*lis)->x!=(*lit)->x)&&((*lis)->y!=(*lit)->y))
                    {
                        
-                       printf("----abs((*lis)->b-(*lit)->b)=%g  \n",abs((*lis)->b-(*lit)->b));
+//                       printf("----abs((*lis)->b-(*lit)->b)=%g  \n",abs((*lis)->b-(*lit)->b));
                        if((abs((*lis)->b-(*lit)->b)<=0.1)&&abs((*lis)->a-(*lit)->a)<=50) 
                        {
                           (*lis)->FE++;                        
@@ -751,7 +793,7 @@ data[3*step+80]=255;
       for(lis=lane_.begin();lis!=lane_.end();++lis)
        {
            updateFS(*lis);
-           printf("----shinq-- x=%d,y=%d FS=%d  \n",(*lis)->x,(*lis)->y,(*lis)->FS);
+  //         printf("----shinq-- x=%d,y=%d FS=%d  \n",(*lis)->x,(*lis)->y,(*lis)->FS);
 
            if((*lis)->FS>=5)
            {
@@ -761,9 +803,14 @@ data[3*step+80]=255;
        }
 
  
-        imshow("origin", image_origin);
+      imshow("origin", image_origin);
 
-
+      lane_.clear();
+      #ifdef debug_video
+      if(waitKey(60) >= 0)
+          break;
+      }
+      #endif 
 //创建窗口、显示图像、销毁图像、释放图像  
 //        cvNamedWindow( "test1", 0 );  
 //        cvShowImage("test1", img0);  
