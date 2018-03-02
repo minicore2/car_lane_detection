@@ -1,5 +1,9 @@
 #ifndef LANE_POSITION
 
+
+enum side{left_side=1, right_side=2}; 
+
+
 class lane
 {
     public:
@@ -17,6 +21,7 @@ class lane
     float new_d;
     unsigned int FA,FB,FC,FD,FE,FF;
     unsigned int  FS;
+    side left_right;
 //    float TF; 
 
 };  

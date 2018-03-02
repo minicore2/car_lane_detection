@@ -1,6 +1,8 @@
 #include "cv.h"  
 #include "highgui.h"  
 #include "lane.h"
+#include "frame.h"
+#include "data_info.h"
 #include <iostream>
 #include <opencv2/opencv.hpp>  
 using namespace cv;
@@ -20,13 +22,29 @@ using namespace std;
 #define whole_picture
 #define debug_lane 
 #define debug_video 
+#define debug_detection
+
 
 int middle_width=0; 
+
+bool driving=false;
+bool learning=false; 
+
+double si2_l=0,si2_r=0; 
+
+double alert_1_l=0,alert_1_r=0,alert_2_l=0,alert_2_r=0;  
+
+#ifdef debug_detection 
+       std::vector<frame *>  frame_;
+       std::vector<data_info *> data_info_;
+#endif
 
 extern void best_line(lane *lan) ;
 extern void updateFS(lane *lan);
 extern void updatepic(cv::Mat *image,lane *lan);  
-
+extern void learning_frame(void);
+extern void alert_driving(void);
+extern void detection_alert(void);
 
 int main(int argc, char *argv[])  
 {  
@@ -38,10 +56,8 @@ int main(int argc, char *argv[])
         std::string pic_name="test";
         std::string pic_new="new";
 
-        std::vector<lane *> lane_;  
+        std::vector<lane *>   lane_;  
  //       new lane;  
-
-
 
 
 #ifdef debug_video 
@@ -797,11 +813,36 @@ data[3*step+80]=255;
 
            if((*lis)->FS>=5)
            {
+
+               #ifdef debug_detection
+
+               frame *fram=new frame(); 
+
+               switch((*lis)->left_right)
+               {
+                   case right_side :
+                        fram->best_b_r=(*lis)->b;     
+                        break ;                
+                   case left_side :
+                        fram->best_b_l=(*lis)->b; 
+                        break; 
+                   default :
+                        break; 
+               }
+
+               frame_.push_back(fram);              
+
+               #endif 
                updatepic(&image_origin,*lis);            
 
            }
        }
 
+      #ifdef debug_detection
+
+      printf("--shinq-- frame number=%d",frame_.size());
+      detection_alert();
+      #endif 
  
       imshow("origin", image_origin);
 
@@ -810,7 +851,9 @@ data[3*step+80]=255;
       if(waitKey(60) >= 0)
           break;
       }
-      #endif 
+      #endif
+
+ 
 //创建窗口、显示图像、销毁图像、释放图像  
 //        cvNamedWindow( "test1", 0 );  
 //        cvShowImage("test1", img0);  
@@ -824,6 +867,84 @@ data[3*step+80]=255;
         cvReleaseImage( &img1 );  
   
         return 0;  
+
+}
+
+void detection_alert(void)
+{
+
+    //#ifdef debug_detection 
+
+       if(true==driving)
+       {
+            
+               alert_driving();    
+
+       }
+       else
+       {
+               if(true==learning)
+               {
+                       learning_frame(); 
+               }
+       }
+
+    //#endif
+
+}
+
+
+void learning_frame(void)
+{
+
+       std::vector<frame *>::iterator lis;
+       std::vector<data_info *>::iterator lit;
+       data_info *data=new data_info();
+       double  data_l=0,data_r=0,data_m_l=0,data_m_r=0,s_m_l=0,s_m_r=0,si2_m_l=0,si2_m_r=0; 
+       int num=0;
+
+       for(lis=frame_.begin();lis!=(frame_.end()-2);++lis)
+       {                  
+            data->speed_l= (*(lis+2))->best_b_l- (*lis)->best_b_l;           
+            data->speed_r= (*(lis+2))->best_b_r- (*lis)->best_b_r;
+            data_info_.push_back(data); 
+       }        
+
+       for(lit=data_info_.begin();lit!=data_info_.end();++lit)
+       {
+            data_l+=(*lit)->speed_l ;      
+            data_r+=(*lit)->speed_r ; 
+            num++; 
+       }
+
+       data_m_l=data_l/num;
+       data_m_r=data_r/num; 
+
+       for(lit=data_info_.begin();lit!=data_info_.end();++lit)
+       {
+            s_m_l+=((*lit)->speed_l-data_m_l)*((*lit)->speed_l-data_m_l);
+            s_m_r+=((*lit)->speed_r-data_m_r)*((*lit)->speed_r-data_m_r); 
+       } 
+
+       si2_m_l=s_m_l/(num-1); 
+       si2_m_r=s_m_r/(num-1);
+
+       si2_l=sqrt(si2_m_l);
+       si2_r=sqrt(si2_m_r); 
+
+       alert_1_l=si2_l*0.69; 
+       alert_1_r=si2_r*0.69;
+
+       alert_2_l=si2_l*0.27;
+       alert_2_r=si2_r*0.27; 
+
+}
+
+
+void alert_driving(void)
+{
+
+
 
 }
 
@@ -843,6 +964,8 @@ void best_line(lane *lan)
 
     if(lane_middle_width<middle_width)
     {
+        lan->left_right=left_side;
+
         if(lan->b<0)
             lan->FA=1;
 
@@ -858,6 +981,7 @@ void best_line(lane *lan)
     }
     else
     {
+        lan->left_right=right_side; 
 
         printf(" x=%d y=%d right \n",lan->x,lan->y);
 
