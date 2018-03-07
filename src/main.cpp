@@ -28,11 +28,9 @@ using namespace std;
 int middle_width=0; 
 
 bool driving=false;
-bool learning=false; 
+bool learning=true; 
 
 double si2_l=0,si2_r=0; 
-
-double alert_1_l=0,alert_1_r=0,alert_2_l=0,alert_2_r=0;  
 
 #ifdef debug_detection 
        std::vector<frame *>  frame_;
@@ -57,6 +55,7 @@ int main(int argc, char *argv[])
         std::string pic_new="new";
 
         std::vector<lane *>   lane_;  
+        unsigned int test_num=0;
  //       new lane;  
 
 
@@ -85,14 +84,26 @@ int main(int argc, char *argv[])
       for(;;)
       {
              cap >> temp;
-             if(temp.empty())
-             {           
-                 std::cout << "read image failure" << std::endl;
-                 return -1;
-             }
+             //cap >> image_origin;
+             //if(temp.empty())
+             //{           
+             //    std::cout << "read image failure" << std::endl;
+             //    return -1;
+             //}
 
              cap >> image_origin;
-             cv::cvtColor(temp,image,CV_BGR2GRAY);
+
+
+             test_num++;
+            // if(test_num>2)
+            // break; 
+
+             if(image_origin.empty())
+             {
+                 std::cout << "read image failure" << std::endl;
+                 break; 
+             }
+             cv::cvtColor(image_origin,image,CV_BGR2GRAY);
              
 //             imshow("src", image);
 //             if(waitKey(30) >= 0)
@@ -110,7 +121,7 @@ int main(int argc, char *argv[])
                 return -1;
         }
 
-        printf("---debug--video \n");
+        //printf("---debug--video \n");
         cv::Mat otsu;
         cv::threshold(image, otsu, 0, 255, CV_THRESH_OTSU);
         cv::imshow("otsu", otsu);
@@ -333,7 +344,7 @@ data[3*step+80]=255;
 
         float bench =0;
 
-        printf("--test here \n");
+     //   printf("--test here \n");
         for(int itera=0;itera<8;itera++)        
         {
 
@@ -804,10 +815,10 @@ data[3*step+80]=255;
        }
 
        
-      
+      bool set_left=false,set_right=false,set_frame=false;
 
       for(lis=lane_.begin();lis!=lane_.end();++lis)
-       {
+      {
            updateFS(*lis);
   //         printf("----shinq-- x=%d,y=%d FS=%d  \n",(*lis)->x,(*lis)->y,(*lis)->FS);
 
@@ -821,42 +832,59 @@ data[3*step+80]=255;
                switch((*lis)->left_right)
                {
                    case right_side :
-                        fram->best_b_r=(*lis)->b;     
+                        if(false==set_right)
+                        {
+                            fram->best_b_r=(*lis)->b;     
+                            set_right=true;
+                            printf(" set right best_b=%g \n" ,fram->best_b_r);
+                        }
                         break ;                
                    case left_side :
-                        fram->best_b_l=(*lis)->b; 
+                        if(false==set_left)
+                        {
+                            fram->best_b_l=(*lis)->b; 
+                            set_left=true; 
+                            printf(" set left best_b=%g \n",fram->best_b_l);
+                        }
                         break; 
                    default :
                         break; 
                }
 
-               frame_.push_back(fram);              
-
+               if((true==set_right)&&(true==set_left)&&(false==set_frame))
+               {
+                   frame_.push_back(fram);
+                   set_frame=true; 
+               }
                #endif 
                updatepic(&image_origin,*lis);            
 
            }
        }
 
-      #ifdef debug_detection
-
-      printf("--shinq-- frame number=%d",frame_.size());
-      detection_alert();
-      #endif 
- 
       imshow("origin", image_origin);
 
       lane_.clear();
+
+      cvWaitKey(0);
+
       #ifdef debug_video
       if(waitKey(60) >= 0)
           break;
       }
       #endif
 
+      #ifdef debug_detection
+      printf("  frame number=%d \n",frame_.size());
+      detection_alert();
+      #endif
+      printf("   si2_l=%g,si2_r=%g \n",si2_l,si2_r);
  
 //创建窗口、显示图像、销毁图像、释放图像  
 //        cvNamedWindow( "test1", 0 );  
 //        cvShowImage("test1", img0);  
+
+        cap.release();
  
         cvWaitKey(0);  
   
@@ -885,6 +913,7 @@ void detection_alert(void)
        {
                if(true==learning)
                {
+                       printf("---shinq-- learning = true \n");
                        learning_frame(); 
                }
        }
@@ -899,12 +928,13 @@ void learning_frame(void)
 
        std::vector<frame *>::iterator lis;
        std::vector<data_info *>::iterator lit;
-       data_info *data=new data_info();
        double  data_l=0,data_r=0,data_m_l=0,data_m_r=0,s_m_l=0,s_m_r=0,si2_m_l=0,si2_m_r=0; 
        int num=0;
 
        for(lis=frame_.begin();lis!=(frame_.end()-2);++lis)
-       {                  
+       {        
+            printf("--shinq best_b_l+2 =%g,best_b_l=%g \n",(*(lis+2))->best_b_l,(*lis)->best_b_l);          
+            data_info *data=new data_info();            
             data->speed_l= (*(lis+2))->best_b_l- (*lis)->best_b_l;           
             data->speed_r= (*(lis+2))->best_b_r- (*lis)->best_b_r;
             data_info_.push_back(data); 
@@ -914,30 +944,37 @@ void learning_frame(void)
        {
             data_l+=(*lit)->speed_l ;      
             data_r+=(*lit)->speed_r ; 
-            num++; 
+            num++;
+            printf(" data_l=%g,data_r=%g num=%d \n",data_l,data_r,num); 
        }
 
        data_m_l=data_l/num;
        data_m_r=data_r/num; 
 
+       printf(" data_m_l=%g,data_m_r=%g \n",data_m_l,data_m_r);
+
        for(lit=data_info_.begin();lit!=data_info_.end();++lit)
        {
             s_m_l+=((*lit)->speed_l-data_m_l)*((*lit)->speed_l-data_m_l);
-            s_m_r+=((*lit)->speed_r-data_m_r)*((*lit)->speed_r-data_m_r); 
+            s_m_r+=((*lit)->speed_r-data_m_r)*((*lit)->speed_r-data_m_r);
+             printf(" speed_l=%g,speed_r=%g \n",(*lit)->speed_l,(*lit)->speed_r);
+             printf(" diff_l=%g,diff_r=%g \n",((*lit)->speed_l-data_m_l)*((*lit)->speed_l-data_m_l),((*lit)->speed_r-data_m_r)*((*lit)->speed_r-data_m_r));
+             printf("  s_m_l=%g, s_m_r=%g  \n",s_m_l,s_m_r); 
        } 
+
+       printf("  s_m_l=%g,sm_r=%g \n",s_m_l,s_m_r);
+
 
        si2_m_l=s_m_l/(num-1); 
        si2_m_r=s_m_r/(num-1);
 
+
+       printf("  si2_m_l=%g,si2_m_r=%g \n",si2_m_l,si2_m_r); 
+
        si2_l=sqrt(si2_m_l);
        si2_r=sqrt(si2_m_r); 
 
-       alert_1_l=si2_l*0.69; 
-       alert_1_r=si2_r*0.69;
-
-       alert_2_l=si2_l*0.27;
-       alert_2_r=si2_r*0.27; 
-
+       printf("  si2_l=%g,si2_r=%g \n",si2_l,si2_r);
 }
 
 
@@ -983,7 +1020,7 @@ void best_line(lane *lan)
     {
         lan->left_right=right_side; 
 
-        printf(" x=%d y=%d right \n",lan->x,lan->y);
+ //       printf(" x=%d y=%d right \n",lan->x,lan->y);
 
         if(lan->b>0)
             lan->FA=1;
