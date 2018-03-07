@@ -817,6 +817,8 @@ data[3*step+80]=255;
        
       bool set_left=false,set_right=false,set_frame=false;
 
+      frame *fram=new frame();
+
       for(lis=lane_.begin();lis!=lane_.end();++lis)
       {
            updateFS(*lis);
@@ -827,8 +829,6 @@ data[3*step+80]=255;
 
                #ifdef debug_detection
 
-               frame *fram=new frame(); 
-
                switch((*lis)->left_right)
                {
                    case right_side :
@@ -837,6 +837,11 @@ data[3*step+80]=255;
                             fram->best_b_r=(*lis)->b;     
                             set_right=true;
                             printf(" set right best_b=%g \n" ,fram->best_b_r);
+//                            std::vector<frame *>::iterator lro;
+//                            for(lro=frame_.begin();lro!=frame_.end();lro++)
+//                            {
+//                                printf("### best_b_l=%g,best_b_r=%g \n",(*lro)->best_b_l,(*lro)->best_b_r);
+//                            }
                         }
                         break ;                
                    case left_side :
@@ -854,7 +859,12 @@ data[3*step+80]=255;
                if((true==set_right)&&(true==set_left)&&(false==set_frame))
                {
                    frame_.push_back(fram);
-                   set_frame=true; 
+                   set_frame=true;
+//                   std::vector<frame *>::iterator lor;
+//                   for(lor=frame_.begin();lor!=frame_.end();lor++)
+//                   { 
+//                       printf(" best_b_l=%g,best_b_r=%g \n",(*lor)->best_b_l,(*lor)->best_b_r);
+//                   }
                }
                #endif 
                updatepic(&image_origin,*lis);            
@@ -931,12 +941,20 @@ void learning_frame(void)
        double  data_l=0,data_r=0,data_m_l=0,data_m_r=0,s_m_l=0,s_m_r=0,si2_m_l=0,si2_m_r=0; 
        int num=0;
 
-       for(lis=frame_.begin();lis!=(frame_.end()-2);++lis)
+       if(frame_.size()<6)
+       { 
+           printf("##learning data is too few !!!##\n");
+       }  
+
+       for(lis=frame_.begin();lis!=(frame_.end()-2);)
        {        
-            printf("--shinq best_b_l+2 =%g,best_b_l=%g \n",(*(lis+2))->best_b_l,(*lis)->best_b_l);          
+            printf("--shinq best_b_l+2 =%g,best_b_l=%g \n",(*(lis+2))->best_b_l,(*lis)->best_b_l);    
+            printf("--shinq best_b_r+2 =%g,best_b_r=%g \n",(*(lis+2))->best_b_r,(*lis)->best_b_r);      
             data_info *data=new data_info();            
-            data->speed_l= (*(lis+2))->best_b_l- (*lis)->best_b_l;           
-            data->speed_r= (*(lis+2))->best_b_r- (*lis)->best_b_r;
+            data->speed_l= ((*(lis+2))->best_b_l- (*lis)->best_b_l)/2;           
+            data->speed_r= ((*(lis+2))->best_b_r- (*lis)->best_b_r)/2;
+            printf("--shinq speed_l=%g,speed_r=%g \n",data->speed_l,data->speed_r);
+            lis+=2; 
             data_info_.push_back(data); 
        }        
 
@@ -974,7 +992,7 @@ void learning_frame(void)
        si2_l=sqrt(si2_m_l);
        si2_r=sqrt(si2_m_r); 
 
-       printf("  si2_l=%g,si2_r=%g \n",si2_l,si2_r);
+       printf("##  si2_l=%g,si2_r=%g ##\n",si2_l,si2_r);
 }
 
 
