@@ -5,6 +5,8 @@
 #include "data_info.h"
 #include <iostream>
 #include <opencv2/opencv.hpp>  
+#include <fstream>
+
 using namespace cv;
 using namespace std;
 
@@ -16,6 +18,7 @@ using namespace std;
 #define para 0.95 
 //#define test_4_debug 0 
 //#define test_simple_point1 0
+#define debug_learning
 #define make_biger_line 
 #define white_line 
 #define parallel_line_while
@@ -27,20 +30,22 @@ using namespace std;
 
 int middle_width=0; 
 
-bool driving=false;
-bool learning=true; 
+bool driving=true;
+bool learning=false; 
 
 double si2_l=0,si2_r=0; 
 
 #ifdef debug_detection 
        std::vector<frame *>  frame_;
        std::vector<data_info *> data_info_;
+       std::vector<data_info *> data_info_alert_;
 #endif
 
 extern void best_line(lane *lan) ;
 extern void updateFS(lane *lan);
 extern void updatepic(cv::Mat *image,lane *lan);  
-extern void learning_frame(void);
+extern void learning_frame_speed(void);
+extern void learning_frame_acceleration(void);
 extern void alert_driving(void);
 extern void detection_alert(void);
 
@@ -836,7 +841,9 @@ data[3*step+80]=255;
                         {
                             fram->best_b_r=(*lis)->b;     
                             set_right=true;
+                            #ifdef debug_learning
                             printf(" set right best_b=%g \n" ,fram->best_b_r);
+                            #endif 
 //                            std::vector<frame *>::iterator lro;
 //                            for(lro=frame_.begin();lro!=frame_.end();lro++)
 //                            {
@@ -849,7 +856,9 @@ data[3*step+80]=255;
                         {
                             fram->best_b_l=(*lis)->b; 
                             set_left=true; 
+                            #ifdef debug_learning
                             printf(" set left best_b=%g \n",fram->best_b_l);
+                            #endif 
                         }
                         break; 
                    default :
@@ -924,16 +933,90 @@ void detection_alert(void)
                if(true==learning)
                {
                        printf("---shinq-- learning = true \n");
-                       learning_frame(); 
+                       learning_frame_speed(); 
+                    //   learning_frame_acceleration();
                }
        }
-
     //#endif
+}
 
+void learning_frame_acceleration(void)
+{
+
+       std::vector<frame *>::iterator lis;
+       std::vector<data_info *>::iterator lit;
+       double  data_l=0,data_r=0,data_m_l=0,data_m_r=0,s_m_l=0,s_m_r=0,si2_m_l=0,si2_m_r=0;
+       int num=0;
+
+       if(frame_.size()<6)
+       {
+           printf("##learning data is too few !!!##\n");
+       }
+
+       for(lis=frame_.begin();lis!=(frame_.end()-2);)
+       {
+            #ifdef debug_learning 
+            printf("--shinq best_b_l+2 =%g,best_b_l=%g \n",(*(lis+2))->best_b_l,(*lis)->best_b_l);
+            printf("--shinq best_b_r+2 =%g,best_b_r=%g \n",(*(lis+2))->best_b_r,(*lis)->best_b_r);
+            #endif
+            data_info *data=new data_info();
+            data->speed_l= ((*(lis+2))->best_b_l- (*lis)->best_b_l)/2;
+            data->speed_r= ((*(lis+2))->best_b_r- (*lis)->best_b_r)/2;
+            #ifdef debug_learning
+            printf("--shinq speed_l=%g,speed_r=%g \n",data->speed_l,data->speed_r);
+            #endif
+            lis+=2;
+            data_info_.push_back(data);
+       }
+
+       for(lit=data_info_.begin();lit!=data_info_.end();++lit)
+       {
+            data_l+=(*lit)->speed_l ;
+            data_r+=(*lit)->speed_r ;
+            num++;
+            #ifdef debug_learning
+            printf(" data_l=%g,data_r=%g num=%d \n",data_l,data_r,num);
+            #endif
+       }
+
+       data_m_l=data_l/num;
+       data_m_r=data_r/num;
+
+       #ifdef debug_learning
+       printf(" data_m_l=%g,data_m_r=%g \n",data_m_l,data_m_r);
+       #endif
+
+       for(lit=data_info_.begin();lit!=data_info_.end();++lit)
+       {
+            s_m_l+=((*lit)->speed_l-data_m_l)*((*lit)->speed_l-data_m_l);
+            s_m_r+=((*lit)->speed_r-data_m_r)*((*lit)->speed_r-data_m_r);
+             #ifdef debug_learning
+             printf(" speed_l=%g,speed_r=%g \n",(*lit)->speed_l,(*lit)->speed_r);
+             printf(" diff_l=%g,diff_r=%g \n",((*lit)->speed_l-data_m_l)*((*lit)->speed_l-data_m_l),((*lit)->speed_r-data_m_r)*((*lit)->speed_r-data_m_r));
+             printf("  s_m_l=%g, s_m_r=%g  \n",s_m_l,s_m_r);
+             #endif
+       }
+
+       #ifdef debug_learning
+       printf("  s_m_l=%g,sm_r=%g \n",s_m_l,s_m_r);
+       #endif
+
+       si2_m_l=s_m_l/(num-1);
+       si2_m_r=s_m_r/(num-1);
+
+       #ifdef debug_learning
+       printf("  si2_m_l=%g,si2_m_r=%g \n",si2_m_l,si2_m_r);
+       #endif
+
+       si2_l=sqrt(si2_m_l);
+       si2_r=sqrt(si2_m_r);
+
+       printf("##  si2_l=%g,si2_r=%g ##\n",si2_l,si2_r);
 }
 
 
-void learning_frame(void)
+
+void learning_frame_speed(void)
 {
 
        std::vector<frame *>::iterator lis;
@@ -947,13 +1030,17 @@ void learning_frame(void)
        }  
 
        for(lis=frame_.begin();lis!=(frame_.end()-2);)
-       {        
+       {       
+            #ifdef debug_learning 
             printf("--shinq best_b_l+2 =%g,best_b_l=%g \n",(*(lis+2))->best_b_l,(*lis)->best_b_l);    
-            printf("--shinq best_b_r+2 =%g,best_b_r=%g \n",(*(lis+2))->best_b_r,(*lis)->best_b_r);      
+            printf("--shinq best_b_r+2 =%g,best_b_r=%g \n",(*(lis+2))->best_b_r,(*lis)->best_b_r);    
+            #endif   
             data_info *data=new data_info();            
             data->speed_l= ((*(lis+2))->best_b_l- (*lis)->best_b_l)/2;           
             data->speed_r= ((*(lis+2))->best_b_r- (*lis)->best_b_r)/2;
+            #ifdef debug_learning
             printf("--shinq speed_l=%g,speed_r=%g \n",data->speed_l,data->speed_r);
+            #endif 
             lis+=2; 
             data_info_.push_back(data); 
        }        
@@ -963,42 +1050,160 @@ void learning_frame(void)
             data_l+=(*lit)->speed_l ;      
             data_r+=(*lit)->speed_r ; 
             num++;
+            #ifdef debug_learning
             printf(" data_l=%g,data_r=%g num=%d \n",data_l,data_r,num); 
+            #endif 
        }
 
        data_m_l=data_l/num;
        data_m_r=data_r/num; 
 
+       #ifdef debug_learning
        printf(" data_m_l=%g,data_m_r=%g \n",data_m_l,data_m_r);
+       #endif 
 
        for(lit=data_info_.begin();lit!=data_info_.end();++lit)
        {
             s_m_l+=((*lit)->speed_l-data_m_l)*((*lit)->speed_l-data_m_l);
             s_m_r+=((*lit)->speed_r-data_m_r)*((*lit)->speed_r-data_m_r);
+             #ifdef debug_learning
              printf(" speed_l=%g,speed_r=%g \n",(*lit)->speed_l,(*lit)->speed_r);
              printf(" diff_l=%g,diff_r=%g \n",((*lit)->speed_l-data_m_l)*((*lit)->speed_l-data_m_l),((*lit)->speed_r-data_m_r)*((*lit)->speed_r-data_m_r));
              printf("  s_m_l=%g, s_m_r=%g  \n",s_m_l,s_m_r); 
+             #endif 
        } 
 
+       #ifdef debug_learning
        printf("  s_m_l=%g,sm_r=%g \n",s_m_l,s_m_r);
-
+       #endif 
 
        si2_m_l=s_m_l/(num-1); 
        si2_m_r=s_m_r/(num-1);
 
-
+       #ifdef debug_learning
        printf("  si2_m_l=%g,si2_m_r=%g \n",si2_m_l,si2_m_r); 
+       #endif 
 
        si2_l=sqrt(si2_m_l);
        si2_r=sqrt(si2_m_r); 
 
        printf("##  si2_l=%g,si2_r=%g ##\n",si2_l,si2_r);
+
+
+       ofstream fout("data.txt");     
+
+       fout<<si2_l<<" "; 
+       fout<<si2_r<<"\n"; 
+
+       num=0;
+       for(lit=data_info_.begin();lit!=data_info_.end();++lit)
+       {
+            fout<<(*lit)->speed_l<<"  " ;
+            fout<<(*lit)->speed_r<<"\n" ;
+            num++;
+            #ifdef debug_learning
+          //  printf(" data_l=%g,data_r=%g num=%d \n",data_l,data_r,num);
+            #endif
+       }
+      
+       fout<<flush;
+       fout.close(); 
+/* 
+       ifstream fin("data.txt"); 
+       float datal=0,datar=0; 
+
+       fin>>datal;
+       fin>>datar;
+ 
+       printf(" datal=%g,datar=%g \n",datal,datar);
+ */      
 }
 
 
 void alert_driving(void)
 {
+        std::vector<data_info *>::iterator lit;
+        std::vector<data_info *>::iterator learning_data,alert_data;
+        float data_m_l=0,data_m_r=0,data_sum_l=0,data_sum_r=0,G_speed=0 ;   
 
+        unsigned int num=0,minimum=0; 
+        ifstream fin("data.txt");
+
+//       printf(" datal=%g,datar=%g \n",datal,datar);
+
+//      if(data_info_.size()<6)
+//       {
+//           printf("##learning data is too few !!!##\n");
+//       }
+
+        // get data 
+        fin>>si2_l;
+        fin>>si2_r;           
+
+        printf("## read from history si2_l=%g,si2_r=%g ##\n",si2_l,si2_r);
+
+        num=0; 
+        for(unsigned int i;i<10;i++)
+        {
+            data_info *data=new data_info();
+            fin>> data->speed_l ;
+            fin>> data->speed_r ;
+
+           if((0==data->speed_l)&&(0==data->speed_r))
+           break ; 
+   
+           num++;  
+           #ifdef debug_learning
+           printf("--shinq speed_l=%g,speed_r=%g num=%d \n",data->speed_l,data->speed_r,num);
+           #endif
+           data_info_alert_.push_back(data);
+        }
+
+       num=0;
+       for(lit=data_info_alert_.begin();lit!=data_info_.end();++lit)
+       {
+            num++;
+            #ifdef debug_learning
+            printf("check data  speed_l=%g,speed_r=%g num=%d \n",(*lit)->speed_l,(*lit)->speed_r,num);
+            #endif
+       }
+
+       // start detecting lane and alert 
+
+       if(data_info_.size()>data_info_alert_.size())
+       {
+           minimum=data_info_alert_.size() ;     
+       }
+       else
+       {
+           minimum=data_info_.size() ;
+       }
+
+       for(learning_data=data_info_.begin(),alert_data=data_info_alert_.begin();lit<=(data_info_.begin()+minimum);++learning_data,++alert_data)
+       {
+            data_m_l=fabs((*alert_data)->speed_l-(*learning_data)->speed_l);     
+            data_m_r=fabs((*alert_data)->speed_r-(*learning_data)->speed_r);
+            if(data_m_l>si2_l)
+            {
+                data_sum_l=(data_m_l-si2_l)*(data_m_l-si2_l);              
+            }
+            else
+            {
+               data_sum_l=0;
+            }
+ 
+           if(data_m_r>si2_r) 
+           {
+                data_sum_r=(data_m_r-si2_r)*(data_m_r-si2_r);
+           }
+           else
+           {
+               data_sum_r=0; 
+           }
+
+           G_speed+=sqrt(data_sum_l+data_sum_r);
+
+       }
 
 
 }
